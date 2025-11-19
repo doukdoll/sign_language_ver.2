@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - SignLanguageServiceIntegrateTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>SignLanguageServiceIntegrateTest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/com.capstone.service.html">com.capstone.service</a> &gt; SignLanguageServiceIntegrateTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">3</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">4.178s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success" id="successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Tests</a>
+</li>
+<li>
+<a href="#tab1">Standard output</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="success">Test_Code_200_OK()</td>
+<td class="success">3.689s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">Test_Code_400_BAD_REQUEST()</td>
+<td class="success">0.072s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">Test_Code_500_Server_Error()</td>
+<td class="success">0.417s</td>
+<td class="success">passed</td>
+</tr>
+</table>
+</div>
+<div id="tab1" class="tab">
+<h2>Standard output</h2>
+<span class="code">
+<pre>Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+20:12:05.455 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.capstone.service.SignLanguageServiceIntegrateTest]: SignLanguageServiceIntegrateTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+20:12:08.148 [Test worker] INFO com.capstone.service.SignLanguageService -- 서비스에서 수어 데이터를 처리 중입니다: null
+20:12:08.152 [Test worker] INFO com.capstone.service.SignLanguageService -- 인식 대상: DEPARTURE
+20:12:09.362 [Test worker] INFO com.capstone.service.SignLanguageService -- 서비스에서 수어 데이터를 처리 중입니다: null
+20:12:09.362 [Test worker] INFO com.capstone.service.SignLanguageService -- 인식 대상: ARRIVAL
+20:12:09.734 [Test worker] INFO com.capstone.service.SignLanguageService -- 서비스에서 수어 데이터를 처리 중입니다: null
+20:12:09.734 [Test worker] INFO com.capstone.service.SignLanguageService -- 인식 대상: 
+20:12:09.791 [Test worker] WARN com.capstone.service.SignLanguageService -- 클라이언트 오류 발생. Code=400 BAD_REQUEST, JSON={
+  &quot;errorCode&quot;: &quot;400&quot;,
+  &quot;errorMessage&quot;: &quot;\uc778\uc2dd \ub300\uc0c1\uc774 \uc62c\ubc14\ub974\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.&quot;
+}
+
+20:12:09.796 [Test worker] WARN com.capstone.service.SignLanguageService -- 오류 상세: [400], 인식 대상이 올바르지 않습니다.
+20:12:09.807 [Test worker] INFO com.capstone.service.SignLanguageService -- 서비스에서 수어 데이터를 처리 중입니다: null
+20:12:09.807 [Test worker] INFO com.capstone.service.SignLanguageService -- 인식 대상: DEPARTURE
+20:12:09.840 [Test worker] ERROR com.capstone.service.SignLanguageService -- 서버 오류 발생. Code=500 INTERNAL_SERVER_ERROR, JSON={
+  &quot;errorCode&quot;: &quot;500&quot;,
+  &quot;errorMessage&quot;: &quot;csv\ud30c\uc77c\uc744 \ucc98\ub9ac\ud558\ub294\ub370 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.: No columns to parse from file&quot;
+}
+
+20:12:09.841 [Test worker] WARN com.capstone.service.SignLanguageService -- 오류 상세: [500], csv파일을 처리하는데 실패했습니다.: No columns to parse from file
+20:12:09.841 [Test worker] INFO com.capstone.service.SignLanguageService -- 서비스에서 수어 데이터를 처리 중입니다: null
+20:12:09.842 [Test worker] INFO com.capstone.service.SignLanguageService -- 인식 대상: DEPARTURE
+20:12:10.212 [Test worker] ERROR com.capstone.service.SignLanguageService -- 서버 오류 발생. Code=500 INTERNAL_SERVER_ERROR, JSON={
+  &quot;errorCode&quot;: &quot;500&quot;,
+  &quot;errorMessage&quot;: &quot;\ucd94\ub860\uc744 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.&quot;
+}
+
+20:12:10.212 [Test worker] WARN com.capstone.service.SignLanguageService -- 오류 상세: [500], 추론을 실패했습니다.
+</pre>
+</span>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="http://www.gradle.org">Gradle 8.10</a> at 2025. 11. 16. 오후 8:12:10</p>
+</div>
+</div>
+</body>
+</html>

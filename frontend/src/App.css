@@ -1,0 +1,135 @@
+/* === 전체 레이아웃 === */
+.app-container { /* 반응형 */
+  background-color: #F2F4F8;
+  margin: 0 auto; /* 중앙 정렬 */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+/* === 헤더 === */
+.header {
+  width: 100%;
+  background-color: #c9d9f0;
+  text-align: left;
+  padding: 60px 40px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.header h1 {
+  font-size: 55px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 12px;
+}
+
+.header p {
+  font-size: 30px;
+  color: #3b4252;
+  margin: 0;
+}
+
+.highlight {
+  color: #3b4252;
+}
+
+/* === 메인 === */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 60px 0;
+}
+
+/* === 카메라 영역 === */
+
+.camera-card {
+  width: 800px;
+  height: 1300px;
+  background-color: #E5E8EF;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+  
+
+}
+.camera-screen {
+  position: relative;
+  width: 900px;
+  height: 720px;
+  border-radius: 40px;
+  overflow: hidden;
+  transition: filter 0.8s ease;
+}
+
+.camera-feed {
+  width: 900px;
+  height: 1000px;
+  object-fit: cover;
+  background-color: #000;
+}
+
+.hand-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hand-svg {
+  width: 120px;
+  height: 120px;
+  opacity: 0.9;
+}
+
+/* === 상태 텍스트 === */
+.status {
+  text-align: center;
+  color: #3b4252;
+}
+
+.status-main {
+  font-weight: 700;
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.status-sub {
+  font-size: 30px;
+  color: #6b7280;
+}
+
+/* === 버튼 === */
+.start-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background-color: #2260f5;
+  color: white;
+  font-size: 50px;
+  font-weight: 700;
+  border: none;
+  padding: 55px 150px;
+  border-radius: 60px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.start-button:hover {
+  background-color: #155fc3;
+}
+
+.start-button:active {
+  transform: scale(0.98);
+}
+
+.btn-icon {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+}

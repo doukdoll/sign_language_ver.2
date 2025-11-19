@@ -1,0 +1,6 @@
+  api-docs:
+    path: /v3/api-docs # OpenAPI 3.0 명세 JSON 파일 경로
+  servers:
+    - url: /api # Swagger UI가 API 호출 시 사용할 기본 URL 경로를 명시적으로 지정
+
+
