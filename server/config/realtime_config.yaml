@@ -1,0 +1,88 @@
+# KSLT 실시간 수어 인식 시스템 설정
+
+# 모델 설정
+model:
+  path: "deployment/20251109-1439_Attention/20251109-1439.onnx"
+  vocab_path: "deployment/20251109-1439_Attention/vocabulary.txt"
+  type: "onnx" # "pytorch" 또는 "onnx"
+  device: "auto" # "cuda", "cpu", "auto"
+
+# 실시간 처리 설정
+realtime:
+  window_size: 180 # ONNX 모델의 sequence_length
+  fps_target: 24.0
+  log_interval: 30 # 로그 출력 간격 (프레임)
+  top_k_log: 3 # 상위 k개 예측 로그
+
+  # 카메라 설정
+  camera:
+    width: 640
+    height: 480
+    fps: 30
+    indices: [0, 1, 2] # 시도할 카메라 인덱스들
+    max_failures: 10 # 연속 프레임 읽기 실패 허용 횟수
+
+  # MediaPipe 설정
+  mediapipe:
+    min_detection_confidence: 0.5
+    min_tracking_confidence: 0.5
+
+# 세그멘테이션 설정
+# segmenter:
+#   prob_thr: 0.9 # 모델 예측 확률 임계값 (대구 가중치 조정을 위해 높임)
+#   fuse_tau: 0.6 # 속도+확률 융합 임계값
+#   min_on: 5 # 연속 조건 만족 프레임 수
+#   cooldown: 20 # 방출 후 대기 프레임 (중복 방지)
+#   w_motion: 0.5 # 융합 시 속도 가중치
+#   w_prob: 0.5 # 융합 시 확률 가중치
+#   rearm_tau: 0.40 # 재무장 임계값
+#   rearm_off: 10 # 재무장 대기 프레임
+#정밀도 우선 세그멘테이션 설정
+segmenter: # 이 설정은 대전 추론을 낮추고 경주,대구를 높이게 타겟함.
+  prob_thr: 0.85
+  fuse_tau: 0.68
+  min_on: 8
+  cooldown: 22
+  w_motion: 0.55
+  w_prob: 0.45
+  rearm_tau: 0.35
+  rearm_off: 14
+# segmenter: #균형 설정
+#   prob_thr: 0.78
+#   fuse_tau: 0.65
+#   min_on: 7
+#   cooldown: 20
+#   w_motion: 0.58
+#   w_prob: 0.42
+#   rearm_tau: 0.35
+#   rearm_off: 12
+
+# 고급 검증 설정 (머리 겹침 체크 제외)
+validator:
+  head_occlusion_threshold: 0.8 # 머리 위 손 비율 임계값 (사용 안 함)
+  min_hand_movement: 0.01 # 최소 손 이동 거리 (실시간용 낮은 임계값)
+  max_frame_gap: 10 # 최대 프레임 간격 (연속성 체크, 실시간용 관대한 값)
+  min_valid_frames_ratio: 0.3 # 최소 유효 프레임 비율 (실시간용 낮은 비율)
+
+# 로깅 설정
+logging:
+  level: "INFO" # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_file: "logs/kslt.log"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# 데이터 저장 설정
+data:
+  save_dir: "data"
+  prefix: "inference_keypoints"
+  save_csv_summary: true
+  save_windows_csv: true
+  save_keypoints_csv: true
+
+# 시각화 설정
+visualization:
+  font_size: 28
+  font_color: [255, 255, 255] # RGB
+  background_color: [16, 117, 245] # RGB
+  show_landmarks: true
+  show_confidence: true # 신뢰도 표시
+  show_inference_time: true # 추론 시간 표시

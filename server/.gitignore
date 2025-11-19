@@ -1,0 +1,13 @@
+venv/
+env/
+/venv
+/env
+
+.cursor
+.DS_Store
+NIA_SL_WORD1501_REAL01_D_000000000000_keypoints.json
+.DS_Store
+.DS_Store
+logs/
+data/
+logs/kslt.log

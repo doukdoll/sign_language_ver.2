@@ -1,0 +1,50 @@
+artifacts:
+  exported_at_utc: '2025-11-09T06:00:46'
+  file_size_bytes: 3106531
+  onnx_model: 20251109-1439.onnx
+  opset_version: 12
+  sequence_length: 180
+data_info:
+  feature_size: 274
+  max_sequence_length: 180
+  num_classes: 12
+model_architecture:
+  bidirectional: true
+  embedding_dim: 384
+  embedding_type: spatial
+  encoder_type: gru
+  hidden_size: 192
+  num_layers: 1
+model_info:
+  best_accuracy: 0.2909090909090909
+  best_ckpt_iteration: 130
+  best_f1_score: 0.19952199837351603
+  best_loss: 1.8738571911147146
+  total_steps: 130
+  training_date: unknown
+validation_metrics:
+  accuracy: 0.2909090909090909
+  f1_macro: 0.19952199837351603
+  f1_weighted: 0.19952199837351603
+  precision_weighted: 0.32420255183413077
+  recall_weighted: 0.2909090909090909
+  wer: 0.7090909090909091
+  wer_scores:
+    del_rate: 0.0
+    ins_rate: 0.0
+    sub_rate: 0.7090909090909091
+vocab:
+  classes:
+  - 경주
+  - 광명
+  - 대구
+  - 대전
+  - 서울역
+  - 수원
+  - 아산
+  - 영등포
+  - 울산
+  - 천안
+  - 포항
+  - <unk>
+  num_classes: 12
