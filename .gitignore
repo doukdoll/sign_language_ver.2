@@ -73,5 +73,5 @@ logs/
 # AI Model Data (too large for git)
 Data/
 *.mp4
-*.json
-*.csv
+#*.json
+#*.csv
