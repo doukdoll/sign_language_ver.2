@@ -12,6 +12,9 @@ public class SignLanguageInputDto {
     // 2. 세션 ID
     private String sessionId;
 
+    // 타임스탬프
+    private long timestamp;
+
     // 3. 프레임 번호
     private int frameIndex;
 
@@ -48,6 +51,10 @@ public class SignLanguageInputDto {
     public void setFrameIndex(int frameIndex) {
         this.frameIndex = frameIndex;
     }
+
+    public long getTimestamp() {return timestamp;}
+
+    public void setTimestamp(long timestamp) {this.timestamp = timestamp;}
 
     public List<List<Double>> getKeypoints() {
         return keypoints;
