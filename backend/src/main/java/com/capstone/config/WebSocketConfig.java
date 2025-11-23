@@ -24,8 +24,11 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(myWebSocketHandler, "/sign/stream/qwer") // '/api/sign/stream' 경로에 핸들러 등록
-                .setAllowedOrigins("*"); // 모든 Origin 허용 (CORS)
+        //HTTP를 통한 통신
+//        registry.addHandler(myWebSocketHandler, "/sign/stream") // '/api/sign/stream' 경로에 핸들러 등록
+//                .setAllowedOrigins("*"); // 모든 Origin 허용 (CORS)
+
+        //WebSocket을 이용한 통신
         // 1. 프론트엔드(React)가 접속할 주소 설정
         // 예: ws://localhost:8080/sign/stream
         registry.addHandler(predictionClientHandler, "/sign/stream")

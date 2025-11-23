@@ -11,7 +11,7 @@ export default function ArrivalPage() {
   
   const { videoRef, state, startRecognition, stopRecognition, resetResult } = useRecognitionFlow({
     serverUrl: import.meta.env.VITE_RECOGNITION_SERVER_URL || 'ws://localhost:8080/api/sign/stream',
-    targetFps: 10,
+    targetFps: 30,
     enableHandFilter: true,
     onRecognized: (label, prob) => {
       console.log(`도착역 인식 완료: ${label} (확률: ${prob})`);

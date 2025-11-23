@@ -207,7 +207,7 @@ except Exception as e:
     logger.critical(f"❌ 치명적 오류: 모델 로드 실패. 서버를 종료해야 합니다. {e}", exc_info=True)
     SERVICE, VOCAB, DEVICE = None, None, None
 
-MAX_BUFFER_FRAMES = realtime_config.get('window_size', 200) if MODEL_TYPE == "pytorch" else 128
+MAX_BUFFER_FRAMES = realtime_config.get('window_size', 200) if MODEL_TYPE == "onnx" else 180
 logger.info(f"⚙️ 설정 완료: Window Size={MAX_BUFFER_FRAMES}, Stride={INFERENCE_STRIDE}")
 
 # --- [추가] 데이터 로거 설정 ---
