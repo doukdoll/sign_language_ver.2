@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+/* 전체 스크롤바 숨기기 */
+.no-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+
+.no-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+}
