@@ -49,10 +49,8 @@ export interface HolisticResults {
 /**
  * MediaPipe Pose → OpenPose BODY_25 (25 × 3)
  */
-function mediapipeToOpenPoseBody25(
+function mediapipeToOpenPoseBody25( //mediapipe는 이미 정규화된 값을 반환하므로 width, height제거
   poseLandmarks: MediaPipeLandmark[] | undefined,
-  width: number,
-  height: number
 ): number[][] {
   const body25: number[][] = Array.from({ length: 25 }, () => [NaN, NaN, 0]);
 
@@ -60,9 +58,10 @@ function mediapipeToOpenPoseBody25(
     return body25;
   }
 
+  //x, y, visibility만 z는 제거
   const points = poseLandmarks.map((p) => [
-    p.x * width,
-    p.y * height,
+    p.x,
+    p.y,
     p.visibility ?? 1.0
   ]);
 
@@ -97,13 +96,16 @@ function mediapipeToOpenPoseBody25(
   return body25;
 }
 
+
+/*
+* face및 hand에도 적용한다!!
+* */
+
 /**
  * MediaPipe Face → OpenPose Face70 (70 × 3)
  */
 function mediapipeToOpenPoseFace(
   faceLandmarks: MediaPipeLandmark[] | undefined,
-  width: number,
-  height: number
 ): number[][] {
   const face70: number[][] = Array.from({ length: 70 }, () => [NaN, NaN, 0]);
 
@@ -112,8 +114,8 @@ function mediapipeToOpenPoseFace(
   }
 
   const points = faceLandmarks.map((p) => [
-    p.x * width,
-    p.y * height,
+    p.x,
+    p.y,
     p.visibility ?? 1.0
   ]);
 
@@ -136,8 +138,6 @@ function mediapipeToOpenPoseFace(
 function mediapipeToOpenPoseHands(
   leftHandLandmarks: MediaPipeLandmark[] | undefined,
   rightHandLandmarks: MediaPipeLandmark[] | undefined,
-  width: number,
-  height: number
 ): number[][] {
   const hands42: number[][] = Array.from({ length: 42 }, () => [NaN, NaN, 0]);
 
@@ -145,8 +145,8 @@ function mediapipeToOpenPoseHands(
   if (leftHandLandmarks && leftHandLandmarks.length > 0) {
     leftHandLandmarks.forEach((p, i) => {
       if (i < 21) {
-        const x = isNaN(p.x) ? 0 : p.x * width;
-        const y = isNaN(p.y) ? 0 : p.y * height;
+        const x = isNaN(p.x) ? 0 : p.x;
+        const y = isNaN(p.y) ? 0 : p.y;
         const conf = p.visibility ?? 1.0;
         hands42[i] = [x, y, conf];
       }
@@ -157,8 +157,8 @@ function mediapipeToOpenPoseHands(
   if (rightHandLandmarks && rightHandLandmarks.length > 0) {
     rightHandLandmarks.forEach((p, i) => {
       if (i < 21) {
-        const x = isNaN(p.x) ? 0 : p.x * width;
-        const y = isNaN(p.y) ? 0 : p.y * height;
+        const x = isNaN(p.x) ? 0 : p.x;
+        const y = isNaN(p.y) ? 0 : p.y;
         const conf = p.visibility ?? 1.0;
         hands42[21 + i] = [x, y, conf];
       }
@@ -176,17 +176,13 @@ function mediapipeToOpenPoseHands(
  * @returns 137 × 3 배열 [[x, y, confidence], ...]
  */
 export function buildKeypoints137(
-  holisticResults: HolisticResults,
-  width: number,
-  height: number
+  holisticResults: HolisticResults
 ): number[][] {
-  const body25 = mediapipeToOpenPoseBody25(holisticResults.poseLandmarks, width, height);
-  const face70 = mediapipeToOpenPoseFace(holisticResults.faceLandmarks, width, height);
+  const body25 = mediapipeToOpenPoseBody25(holisticResults.poseLandmarks);
+  const face70 = mediapipeToOpenPoseFace(holisticResults.faceLandmarks);
   const hands42 = mediapipeToOpenPoseHands(
     holisticResults.leftHandLandmarks,
-    holisticResults.rightHandLandmarks,
-    width,
-    height
+    holisticResults.rightHandLandmarks
   );
 
   // 137 = 25 + 70 + 42
