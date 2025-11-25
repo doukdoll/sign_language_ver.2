@@ -17,5 +17,5 @@ spring:
 logging:
   level:
     root: INFO
-    com.capstone: INFO
+    com.capstone: DEBUG
 
