@@ -35,10 +35,10 @@ export default function ArrivalPage() {
 
   const handleConfirm = () => {
     if (state.recognizedLabel) {
-      navigate("/triptype", {
+      navigate("/passenger", {
         state: {
-          departureStation: departureStation, // 출발역 전달
-          arrivalStation: state.recognizedLabel, // 도착역 전달
+          departureStation: departureStation, // 출발역 유지
+          arrivalStation: state.recognizedLabel, // 도착역 추가
         },
       });
     }
