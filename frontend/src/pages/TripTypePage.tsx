@@ -1,10 +1,19 @@
+<<<<<<< HEAD
 import { useNavigate } from "react-router-dom";
+=======
+import { useNavigate, useLocation } from "react-router-dom";
+>>>>>>> 16050c606410d1b1d9b375acfda5d3cba57bcafe
 import Header from "../components/Header";
 import { setTripType } from "../api/axios";  
 
 export default function TripTypePage() {
 
   const navigate = useNavigate();
+<<<<<<< HEAD
+=======
+  const location = useLocation(); // useLocation 훅 사용
+  const { departureStation, arrivalStation } = location.state || {}; // 출발역, 도착역 값 가져오기
+>>>>>>> 16050c606410d1b1d9b375acfda5d3cba57bcafe
 
   const handleStart = async (type: "one-way" | "round") => {
     try {
@@ -56,10 +65,17 @@ export default function TripTypePage() {
 
         <div className="w-[80%] bg-white border border-gray-200 px-4 py-3 mb-5 shadow-sm mt-6 mx-auto">
           <p className="text-sm text-gray-700">
+<<<<<<< HEAD
             <span className="font-semibold text-gray-900">출발역:</span> 부산역
           </p>
           <p className="text-sm text-gray-700 mt-1">
             <span className="font-semibold text-gray-900">도착역:</span> 서울역
+=======
+            <span className="font-semibold text-gray-900">출발역:</span> {departureStation || "인식 대기 중..."}
+          </p>
+          <p className="text-sm text-gray-700 mt-1">
+            <span className="font-semibold text-gray-900">도착역:</span> {arrivalStation || "인식 대기 중..."}
+>>>>>>> 16050c606410d1b1d9b375acfda5d3cba57bcafe
           </p>
         </div>
 

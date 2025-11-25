@@ -183,6 +183,10 @@ export default function TrainTimeTablePage() {
         >
           예매
         </button>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 16050c606410d1b1d9b375acfda5d3cba57bcafe
       </div>
     </div>
   );

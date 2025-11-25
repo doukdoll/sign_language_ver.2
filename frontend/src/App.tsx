@@ -21,7 +21,10 @@ const router = createBrowserRouter([
   { path: "/timetable", element: <TrainTimeTablePage /> },
   { path: "/seat", element: <SeatPage/>},
   { path: "/summary", element: <ReservationSummaryPage/>},
+<<<<<<< HEAD
   { path: "/"}
+=======
+>>>>>>> 16050c606410d1b1d9b375acfda5d3cba57bcafe
 ]);
 
 function App() {
