@@ -1,0 +1,83 @@
+# 추론 모델만으로 실시간 수어 인식 테스트 설정
+
+# 모델 설정
+model:
+  path: "deployment/20251105-2043/20251105-2043.onnx"
+  vocab_path: "deployment/20251105-2043/vocabulary.txt"
+  type: "onnx" # pytorch 또는 onnx
+  device: "auto" # auto, cpu, cuda, mps
+
+# 실시간 설정
+realtime:
+  window_size: 128 # 슬라이딩 윈도우 크기 (ONNX 모델 sequence_length)
+  fps_target: 30.0 # 목표 FPS
+
+  # 카메라 설정
+  camera:
+    indices: [0, 1, 2] # 시도할 카메라 인덱스
+    width: 640
+    height: 480
+    fps: 30
+    max_failures: 10
+
+  # MediaPipe 설정
+  mediapipe:
+    min_detection_confidence: 0.5
+    min_tracking_confidence: 0.5
+
+  # 키포인트 정규화 설정
+  normalization:
+    enable_bodypart_norm: true # 신체 부위별 정규화 활성화
+    confidence_threshold: 0.3 # 유효한 키포인트 판별 임계값
+    bbox_padding: 0.1 # 바운딩 박스 패딩 비율 (10%)
+    image_width: 640 # 기본 이미지 너비
+    image_height: 480 # 기본 이미지 높이
+
+  # 고급 검증 설정 (머리 겹침 체크 제외)
+  validator:
+    head_occlusion_threshold: 0.8 # 머리 위 손 비율 임계값 (사용 안 함)
+    min_hand_movement: 0.01 # 최소 손 이동 거리
+    max_frame_gap: 10 # 최대 프레임 간격
+    min_valid_frames_ratio: 0.3 # 최소 유효 프레임 비율
+
+# 테스트 설정
+test:
+  # 샘플 데이터 테스트
+  sample_data_tests:
+    - name: "랜덤 데이터"
+      type: "random"
+      params:
+        mean: 0.0
+        std: 1.0
+    - name: "영점 데이터"
+      type: "zeros"
+    - name: "일정한 값"
+      type: "constant"
+      params:
+        value: 0.5
+    - name: "정규분포"
+      type: "normal"
+      params:
+        mean: 0.0
+        std: 1.0
+
+  # 실시간 테스트 설정
+  realtime_test:
+    show_landmarks: true
+    show_confidence: true
+    show_fps: true
+    show_frame_count: true
+    log_interval: 30 # 로그 출력 간격 (프레임)
+    top_k_predictions: 3 # 상위 k개 예측 표시
+
+# 로깅 설정
+logging:
+  level: "INFO" # DEBUG, INFO, WARNING, ERROR
+  show_inference_time: true
+  show_prediction_details: true
+
+# 성능 측정
+performance:
+  measure_inference_time: true
+  measure_fps: true
+  memory_monitoring: false # 메모리 모니터링 비활성화 (테스트용)

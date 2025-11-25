@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.capstone.service.SignLanguageServiceIntegrateTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2025-11-16T11:12:06" hostname="BOOK-CV8PGFJK20" time="4.182">
+  <properties/>
+  <testcase name="Test_Code_200_OK()" classname="com.capstone.service.SignLanguageServiceIntegrateTest" time="3.689"/>
+  <testcase name="Test_Code_400_BAD_REQUEST()" classname="com.capstone.service.SignLanguageServiceIntegrateTest" time="0.072"/>
+  <testcase name="Test_Code_500_Server_Error()" classname="com.capstone.service.SignLanguageServiceIntegrateTest" time="0.417"/>
+  <system-out><![CDATA[Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+20:12:05.455 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.capstone.service.SignLanguageServiceIntegrateTest]: SignLanguageServiceIntegrateTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+20:12:08.148 [Test worker] INFO com.capstone.service.SignLanguageService -- 서비스에서 수어 데이터를 처리 중입니다: null
+20:12:08.152 [Test worker] INFO com.capstone.service.SignLanguageService -- 인식 대상: DEPARTURE
+20:12:09.362 [Test worker] INFO com.capstone.service.SignLanguageService -- 서비스에서 수어 데이터를 처리 중입니다: null
+20:12:09.362 [Test worker] INFO com.capstone.service.SignLanguageService -- 인식 대상: ARRIVAL
+20:12:09.734 [Test worker] INFO com.capstone.service.SignLanguageService -- 서비스에서 수어 데이터를 처리 중입니다: null
+20:12:09.734 [Test worker] INFO com.capstone.service.SignLanguageService -- 인식 대상: 
+20:12:09.791 [Test worker] WARN com.capstone.service.SignLanguageService -- 클라이언트 오류 발생. Code=400 BAD_REQUEST, JSON={
+  "errorCode": "400",
+  "errorMessage": "\uc778\uc2dd \ub300\uc0c1\uc774 \uc62c\ubc14\ub974\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4."
+}
+
+20:12:09.796 [Test worker] WARN com.capstone.service.SignLanguageService -- 오류 상세: [400], 인식 대상이 올바르지 않습니다.
+20:12:09.807 [Test worker] INFO com.capstone.service.SignLanguageService -- 서비스에서 수어 데이터를 처리 중입니다: null
+20:12:09.807 [Test worker] INFO com.capstone.service.SignLanguageService -- 인식 대상: DEPARTURE
+20:12:09.840 [Test worker] ERROR com.capstone.service.SignLanguageService -- 서버 오류 발생. Code=500 INTERNAL_SERVER_ERROR, JSON={
+  "errorCode": "500",
+  "errorMessage": "csv\ud30c\uc77c\uc744 \ucc98\ub9ac\ud558\ub294\ub370 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.: No columns to parse from file"
+}
+
+20:12:09.841 [Test worker] WARN com.capstone.service.SignLanguageService -- 오류 상세: [500], csv파일을 처리하는데 실패했습니다.: No columns to parse from file
+20:12:09.841 [Test worker] INFO com.capstone.service.SignLanguageService -- 서비스에서 수어 데이터를 처리 중입니다: null
+20:12:09.842 [Test worker] INFO com.capstone.service.SignLanguageService -- 인식 대상: DEPARTURE
+20:12:10.212 [Test worker] ERROR com.capstone.service.SignLanguageService -- 서버 오류 발생. Code=500 INTERNAL_SERVER_ERROR, JSON={
+  "errorCode": "500",
+  "errorMessage": "\ucd94\ub860\uc744 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4."
+}
+
+20:12:10.212 [Test worker] WARN com.capstone.service.SignLanguageService -- 오류 상세: [500], 추론을 실패했습니다.
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
