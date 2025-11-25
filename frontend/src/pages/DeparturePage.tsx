@@ -41,7 +41,7 @@ export default function DeparturePage() {
     const handleConfirm = () => {
         if (state.recognizedLabel) {
             // 전역 상태 저장 로직이 있다면 여기에 추가
-            navigate('/arrival');
+            navigate('/arrival', { state: { departureStation: state.recognizedLabel } });
         }
     };
 

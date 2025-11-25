@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom"; // useLocation import 추가
 import Header from "../components/Header";
 import CameraFeed from "../components/recognition/CameraFeed";
 import RecognitionResult from "../components/recognition/RecognitionResult";
@@ -8,6 +9,8 @@ import { useRecognitionFlow } from "../hooks/useRecognitionFlow";
 
 export default function ArrivalPage() {
   const navigate = useNavigate();
+  const location = useLocation(); // useLocation 훅 사용
+  const { departureStation } = location.state || {}; // departureStation 값 가져오기
   
   const { videoRef, state, startRecognition, stopRecognition, resetResult } = useRecognitionFlow({
     serverUrl: import.meta.env.VITE_RECOGNITION_SERVER_URL || 'ws://localhost:8080/api/sign/stream',
@@ -32,7 +35,12 @@ export default function ArrivalPage() {
 
   const handleConfirm = () => {
     if (state.recognizedLabel) {
-      navigate("/triptype");
+      navigate("/triptype", {
+        state: {
+          departureStation: departureStation, // 출발역 전달
+          arrivalStation: state.recognizedLabel, // 도착역 전달
+        },
+      });
     }
   };
 
