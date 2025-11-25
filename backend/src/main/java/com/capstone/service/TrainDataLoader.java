@@ -30,12 +30,12 @@ public class TrainDataLoader {
 
     // CSV 파일에 있는 역 이름을 순서대로 매핑
     private static final List<String> STATIONS_DOWN = Arrays.asList(
-            "행신", "서울", "영등포", "수원", "광명", "천안아산", "오송", "대전", "김천구미",
-            "서대구", "동대구", "경주", "울산", "경산", "밀양", "물금", "구포", "부산"
+        "행신", "서울역", "영등포", "수원", "광명", "천안아산", "오송", "대전",
+        "김천구미", "서대구", "동대구", "경주", "울산", "경산", "밀양", "물금", "구포", "부산"
     );
     private static final List<String> STATIONS_UP = Arrays.asList(
             "부산", "구포", "물금", "밀양", "경산", "울산", "경주", "동대구",
-            "서대구", "김천구미", "대전", "오송", "천안아산", "광명", "수원", "영등포", "서울", "행신"
+            "서대구", "김천구미", "대전", "오송", "천안아산", "광명", "수원", "영등포", "서울역", "행신"
     );
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
@@ -48,8 +48,8 @@ public class TrainDataLoader {
     public void loadTrainData() {
         if (trainScheduleRepository.count() == 0) { // 데이터가 비어있을 때만 로드
             System.out.println("Loading train schedule data...");
-            loadCsvData("경부선하행.csv", STATIONS_DOWN);
-            loadCsvData("경부선상행.csv", STATIONS_UP);
+            loadCsvData("gyeongbu_hahaeng.csv", STATIONS_DOWN);
+            loadCsvData("gyeongbu_sanghaeng.csv", STATIONS_UP);
             System.out.println("Train schedule data loaded. Total: " + trainScheduleRepository.count() + " schedules.");
         } else {
             System.out.println("Train schedule data already exists. Skipping load.");

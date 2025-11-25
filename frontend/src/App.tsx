@@ -21,6 +21,7 @@ const router = createBrowserRouter([
   { path: "/timetable", element: <TrainTimeTablePage /> },
   { path: "/seat", element: <SeatPage/>},
   { path: "/summary", element: <ReservationSummaryPage/>},
+  { path: "/"}
 ]);
 
 function App() {

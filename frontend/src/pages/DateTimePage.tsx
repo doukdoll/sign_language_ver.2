@@ -11,8 +11,9 @@ import { useState, useEffect } from "react";
 export default function DateTimePage() {
 
   const location = useLocation();
-  const tripType = location.state?.tripType ?? "one-way";
-  console.log("🟦 tripType:", tripType);
+  console.log("📝 DateTimePage received state:", location.state);
+
+  const { departureStation, arrivalStation, tripType } = location.state || {};
 
   const [step, setStep] = useState<"departure" | "return">("departure");
 
@@ -63,6 +64,8 @@ export default function DateTimePage() {
 
       navigate("/timetable", {
         state: {
+          departureStation,
+          arrivalStation,
           tripType,
           departureDate,
           departureHour,
@@ -95,6 +98,8 @@ export default function DateTimePage() {
 
       navigate("/timetable", {
         state: {
+          departureStation,
+          arrivalStation,
           tripType,
           departureDate,
           departureHour,
