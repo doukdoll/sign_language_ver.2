@@ -35,24 +35,30 @@ export default function DateTimePage() {
 
   const navigate = useNavigate();
 
- 
+  // ✅ [추가] 날짜를 "YYYY-MM-DD" 문자열로 변환하는 헬퍼 함수
+  // toISOString()을 쓰지 않고, 로컬 시간(사용자가 보는 달력 날짜) 그대로 가져옵니다.
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // 월은 0부터 시작하므로 +1
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const handleNext = () => {
     if (tripType === "one-way") {
       console.log("편도 선택");
-
       handleRequestOneWay();
       return;
     }
-
-    
     setStep("return");
   };
 
-
+  // ✅ [수정] 편도 요청 처리
   const handleRequestOneWay = async () => {
     if (departureHour === null) return alert("출발 시간을 선택해주세요.");
 
-    const depDate = departureDate.toISOString().split("T")[0];
+    // [수정 완료] formatDate 함수를 사용하여 날짜 밀림 방지
+    const depDate = formatDate(departureDate);
     const depTime = `${String(departureHour).padStart(2, "0")}:00`;
 
     const sendData = `${depDate} ${depTime}`;
@@ -77,16 +83,16 @@ export default function DateTimePage() {
     }
   };
 
-
-
+  // ✅ [수정] 왕복 요청 처리
   const handleSearchTrain = async () => {
     if (departureHour === null || returnHour === null)
       return alert("모든 시간 정보를 선택해주세요.");
 
-    const depDate = departureDate.toISOString().split("T")[0];
+    // [수정 완료] formatDate 함수를 사용하여 날짜 밀림 방지
+    const depDate = formatDate(departureDate);
     const depTime = `${String(departureHour).padStart(2, "0")}:00`;
 
-    const retDate = returnDate?.toISOString().split("T")[0];
+    const retDate = returnDate ? formatDate(returnDate) : null;
     const retTime = `${String(returnHour).padStart(2, "0")}:00`;
 
     const sendData = `${depDate} ${depTime} | ${retDate} ${retTime}`;
@@ -115,80 +121,80 @@ export default function DateTimePage() {
 
 
   return (
-    <div className="flex justify-center w-screen h-screen bg-white">
-      <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-xl flex flex-col">
+      <div className="flex justify-center w-screen h-screen bg-white">
+        <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-xl flex flex-col">
 
-        <Header title="날짜/시간 선택" />
+          <Header title="날짜/시간 선택" />
 
-        <main className="mt-7 px-6 flex flex-col items-center">
+          <main className="mt-7 px-6 flex flex-col items-center">
 
-          <p className="text-xl font-bold mb-4">
-            {step === "departure"
-              ? "출발할 날짜와 시간을 선택해주세요."
-              : "돌아오는 날짜와 시간을 선택해주세요."}
-          </p>
+            <p className="text-xl font-bold mb-4">
+              {step === "departure"
+                  ? "출발할 날짜와 시간을 선택해주세요."
+                  : "돌아오는 날짜와 시간을 선택해주세요."}
+            </p>
 
-          {/* 캘린더 UI */}
-          <DatePicker
-            locale={ko}
-            dateFormat="yyyy.MM.dd"
-            selected={step === "departure" ? departureDate : returnDate}
-            onChange={(d) => {
-              if (step === "departure") setDepartureDate(d!);
-              else setReturnDate(d!);
-            }}
-            inline
-            calendarClassName="custom-calendar"
-            wrapperClassName="custom-calendar-wrapper"
-            showTimeSelect={false}
-          />
+            {/* 캘린더 UI */}
+            <DatePicker
+                locale={ko}
+                dateFormat="yyyy.MM.dd"
+                selected={step === "departure" ? departureDate : returnDate}
+                onChange={(d) => {
+                  if (step === "departure") setDepartureDate(d!);
+                  else setReturnDate(d!);
+                }}
+                inline
+                calendarClassName="custom-calendar"
+                wrapperClassName="custom-calendar-wrapper"
+                showTimeSelect={false}
+            />
 
-          {/* 시간 선택 */}
-          <div className="w-full flex overflow-x-auto gap-3 py-3 no-scrollbar">
-            {hours.map((h) => {
-              const selected = step === "departure" ? departureHour : returnHour;
-              return (
-                <button
-                  key={h}
-                  onClick={() => {
-                    if (step === "departure") setDepartureHour(h);
-                    else setReturnHour(h);
-                  }}
-                  className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm border font-semibold
+            {/* 시간 선택 */}
+            <div className="w-full flex overflow-x-auto gap-3 py-3 no-scrollbar">
+              {hours.map((h) => {
+                const selected = step === "departure" ? departureHour : returnHour;
+                return (
+                    <button
+                        key={h}
+                        onClick={() => {
+                          if (step === "departure") setDepartureHour(h);
+                          else setReturnHour(h);
+                        }}
+                        className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm border font-semibold
                     ${
-                      selected === h
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-slate-700 border-slate-300"
-                    }
+                            selected === h
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-white text-slate-700 border-slate-300"
+                        }
                   `}
-                >
-                  {String(h).padStart(2, "0")}시
-                </button>
-              );
-            })}
-          </div>
+                    >
+                      {String(h).padStart(2, "0")}시
+                    </button>
+                );
+              })}
+            </div>
 
-          {/* 버튼 */}
-          <div className="mt-6">
-            {step === "departure" ? (
-              <button
-                className="bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-bold"
-                onClick={handleNext}
-              >
-                다음
-              </button>
-            ) : (
-              <button
-                className="bg-green-600 text-white px-6 py-3 rounded-xl text-lg font-bold"
-                onClick={handleSearchTrain}
-              >
-                기차 조회하기
-              </button>
-            )}
-          </div>
+            {/* 버튼 */}
+            <div className="mt-6">
+              {step === "departure" ? (
+                  <button
+                      className="bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-bold"
+                      onClick={handleNext}
+                  >
+                    다음
+                  </button>
+              ) : (
+                  <button
+                      className="bg-green-600 text-white px-6 py-3 rounded-xl text-lg font-bold"
+                      onClick={handleSearchTrain}
+                  >
+                    기차 조회하기
+                  </button>
+              )}
+            </div>
 
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
   );
 }

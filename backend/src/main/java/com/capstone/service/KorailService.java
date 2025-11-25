@@ -39,6 +39,8 @@ public class KorailService {
         List<TrainSchedule> filteredSchedules = new ArrayList<>();
 
         if (departure != null && !departure.isBlank() && destination != null && !destination.isBlank()) {
+            logger.info("온 시간:{}", departureFrom);
+            logger.info("정해진 시간:{}", effectiveDepartureFrom);
             if ("대구".equalsIgnoreCase(destination.trim())) {
                 List<String> daeguStations = Arrays.asList("동대구", "서대구");
                 filteredSchedules = trainScheduleRepository.findByDepartureStationAndArrivalStationInAndDepartureTimeAfterOrderByDepartureTimeAsc(

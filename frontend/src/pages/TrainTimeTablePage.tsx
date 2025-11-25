@@ -34,16 +34,24 @@ export default function TrainTimeTablePage() {
         setLoading(true);
         setError(null);
 
-        // 날짜와 시간을 YYYY-MM-DD HH:MM 형식으로 포맷 (백엔드 API 형식에 맞춤)
-        const formattedDate = new Date(departureDate).toISOString().split('T')[0];
+        // ⭕ 로컬 시간(한국 시간) 그대로 연-월-일 문자열을 만듦
+        const year = departureDate.getFullYear();
+        const month = String(departureDate.getMonth() + 1).padStart(2, '0');
+        const day = String(departureDate.getDate()).padStart(2, '0');
+
+        const formattedDate = `${year}-${month}-${day}`;
+
+        // 2. 🔥 [필수 추가] 시간 포맷팅 (0 -> "00:00", 14 -> "14:00")
         const formattedTime = `${String(departureHour).padStart(2, '0')}:00`;
-        const departureFromDateTime = `${formattedDate} ${formattedTime}`;
+
+// 3. 날짜와 시간을 합침 ("2025-11-27 14:00")
+        const finalDateTime = `${formattedDate} ${formattedTime}`;
 
         // GET 요청을 위한 쿼리 파라미터 구성 (백엔드 API 필드명에 맞춤)
         const params: any = {
           departure: departureStation,
           destination: arrivalStation,
-          departureFrom: departureFromDateTime,
+          departureFrom: finalDateTime,
         };
         // departureTo는 특정 시간 이후의 열차를 찾는 것이므로 생략합니다.
 
