@@ -1,10 +1,15 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // useLocation 추가
 import { setPassengers } from "../api/axios";
 import Header from "../components/Header";
 
 export default function PassengerPage() {
   const navigate = useNavigate();
+  const location = useLocation(); // location 훅 사용
+  
+  // 이전 페이지(ArrivalPage)에서 넘겨준 역 정보 받기
+  const { departureStation, arrivalStation } = location.state || {}; 
+
   const [count, setCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -14,13 +19,16 @@ export default function PassengerPage() {
     try {
       setLoading(true);
       
+      const res = await setPassengers(count);
+      console.log("서버 응답:", res); 
       
-    const res = await setPassengers(count);
-    console.log("서버 응답:", res); 
-      
-      // 성공 시 다음 페이지로 이동
+      // 수정된 부분: 다음 페이지로 모든 정보(출발, 도착, 인원) 전달
       navigate("/triptype", { 
-        state: { passengers: count } 
+        state: { 
+          departureStation: departureStation, // 전달받은 출발역 토스
+          arrivalStation: arrivalStation,     // 전달받은 도착역 토스
+          passengers: count                   // 선택한 인원 추가
+        } 
       });
       
     } catch (error) {
@@ -40,6 +48,13 @@ export default function PassengerPage() {
         <Header title="탑승 인원 선택" />
 
         <main className="flex flex-col items-center mt-10 px-6">
+          
+          {/* (디버깅용 - 개발 완료 후 삭제 가능) 현재 데이터 흐름 확인 */}
+          {import.meta.env.DEV && (
+            <div className="text-xs text-gray-400 mb-2">
+               경로: {departureStation} → {arrivalStation}
+            </div>
+          )}
 
           <p className="text-xl font-bold mb-4">탑승 인원을 선택해주세요.</p>
           <p className="text-slate-600 mb-6">큰 버튼을 눌러 인원을 선택할 수 있어요.</p>
@@ -64,7 +79,6 @@ export default function PassengerPage() {
               </button>
             ))}
           </div>
-
          
           {count !== null && (
             <div className="mt-6 text-center">
