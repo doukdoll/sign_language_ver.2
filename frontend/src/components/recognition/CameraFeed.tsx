@@ -16,8 +16,8 @@ export interface CameraFeedHandle {
 
 const CameraFeed = forwardRef<CameraFeedHandle, CameraFeedProps>(
   ({ 
-    width = "310px", 
-    height = "380px", 
+    width = "380px", 
+    height = "500px", 
     className = "", 
     videoRef: externalVideoRef,
     isRecognizing,
@@ -83,12 +83,6 @@ const CameraFeed = forwardRef<CameraFeedHandle, CameraFeedProps>(
           </div>
         )}
         
-        {/* 인식 완료 표시 (옵션) */}
-        {recognized && station && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg text-sm">
-            ✓ {station}
-          </div>
-        )}
       </div>
     );
   }

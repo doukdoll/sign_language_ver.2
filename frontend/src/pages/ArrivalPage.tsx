@@ -49,14 +49,15 @@ export default function ArrivalPage() {
       <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-2xl flex flex-col overflow-hidden">
         <Header title="도착역 선택" />
 
-        <main className="flex flex-col flex-1 px-8 overflow-y-auto">
-          <div className="mt-6">
-            <p className="text-xl text-left font-bold mb-2">
+        
+          <div className="mt-6 px-10">
+            <p className="text-[23px] text-[#3B4252] text-left font-bold mb-1">
               어느 역으로 가시겠어요?
             </p>
             <p className="text-gray-600 mb-6 text-left">
               도착역 이름을 수어로 표현해주세요.
             </p>
+          </div>
 
             {/* 에러 표시 */}
             {state.error && (
@@ -65,14 +66,16 @@ export default function ArrivalPage() {
               </div>
             )}
 
-            {/* 연결 상태 */}
+            {/* 연결 상태 -- 화면 x*/}
+            {/*
             {!state.isReady && state.isRecognizing && (
               <div className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-lg mb-4 text-sm">
                 인식 서버 연결 중...
               </div>
             )}
+            */}
          
-            <div className="relative flex items-center justify-center w-full">
+            <div className="relative flex items-center justify-center w-full mb-4">
               <CameraFeed  
                 videoRef={videoRef}
                 isRecognizing={state.isRecognizing}
@@ -80,32 +83,35 @@ export default function ArrivalPage() {
                 station={state.recognizedLabel}
               />
 
-          
-              {state.recognizedLabel && (
-                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-[85%]">
-                  <RecognitionResult stationName={state.recognizedLabel} />
-                </div>
-              )}
+              {/* 인식 결과를 카메라 하단에 표시 */}
+                {state.recognizedLabel && (
+                    <div className="absolute  bottom-2 left-1/2 -translate-x-1/2 w-[80%] h-[18%]">
+                        <RecognitionResult stationName={state.recognizedLabel} />
+                    </div>
+                )}
             </div>
 
-            {/* 디버그 정보 */}
-            {import.meta.env.DEV && (
+            {/* 디버그 정보 --화면 x */}
+            {/*{import.meta.env.DEV && (
               <div className="text-xs text-gray-500 mt-2 text-center">
                 전송: {state.framesSent} | 확률: {state.recognizedProb?.toFixed(2) || 'N/A'}
               </div>
-            )}
-          
+            )}*/}
+            {/* 재시도 및 확인 버튼 */}
+            <div className="flex-none w-full h-[80px] flex flex-col justify-center items-center">
             {state.recognizedLabel && (
-              <div className="flex gap-4 mt-3 justify-center">
+              <div className="w-[84%]  h-[65px]">
                 <RecognitionButtons
-                  onRetry={handleRetry}
-                  onConfirm={handleConfirm}
+                onRetry={handleRetry}
+                onConfirm={handleConfirm}
                 />
               </div>
-            )}
+            )} 
+            </div> 
+            
           </div>
-        </main>
+        
       </div>
-    </div>
+   
   );
 }

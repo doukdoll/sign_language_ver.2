@@ -5,21 +5,26 @@ interface RecognitionButtonsProps {
 
 export default function RecognitionButtons({ onRetry, onConfirm }: RecognitionButtonsProps) {
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4 w-full h-full">
+      
+      
       <button
         onClick={onRetry}
-        className="px-9 py-2.5 bg-white border border-blue-300 text-blue-600 font-semibold rounded-xl 
-                   hover:bg-sky-50 active:scale-95 transition-all duration-150"
+        className="flex-1 h-full bg-white border-2 border-blue-300 text-blue-600 text-lg font-bold rounded-2xl 
+                   hover:bg-sky-50 active:scale-95 transition-all duration-150 shadow-sm"
       >
-        다시 인식하기
+        ↺ 다시 인식하기
       </button>
+
+      
       <button
         onClick={onConfirm}
-        className="px-9 py-2.5 bg-blue-500 text-white font-semibold rounded-xl 
-                   hover:bg-blue-600 active:scale-95 transition-all duration-150"
+        className="flex-1 h-full bg-blue-500 text-white text-xl font-bold rounded-2xl 
+                   hover:bg-blue-600 active:scale-95 transition-all duration-150 shadow-md"
       >
         맞아요
       </button>
+      
     </div>
   );
 }

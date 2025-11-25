@@ -5,7 +5,7 @@ interface RecognitionResultProps {
 
 function RecognitionResult({ stationName }: RecognitionResultProps) {
   return (
-    <div className="w-[100%] bg-green-50 border border-green-300 rounded-xl py-3 px-4 mb-4 shadow-sm text-left">
+    <div className="w-[100%] h-[100%] bg-green-50 border border-green-300 rounded-xl py-3 px-4 mb-4 shadow-sm text-left">
       <p className="text-[16px] text-green-700 font-semibold flex items-center gap-2">
         <img src={checkIcon} alt="인식 완료" className="w-5 h-5" />
         {stationName} 인식 완료
