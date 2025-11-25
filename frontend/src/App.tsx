@@ -6,9 +6,9 @@ import DateTimePage from "./pages/DateTimePage";
 import PassengerPage from "./pages/PassengerPage";
 import TrainTimeTablePage from "./pages/TrainTimeTablePage";
 import SeatPage from "./pages/SeatPage";
-import SeatListPage from "./pages/SeatListPage";
 import DeparturePage from "./pages/DeparturePage";
 import ArrivalPage from "./pages/ArrivalPage";
+import ReservationSummaryPage from "./pages/ReservationSummaryPage";
 
 
 const router = createBrowserRouter([
@@ -20,7 +20,7 @@ const router = createBrowserRouter([
   { path: "/datetime", element: <DateTimePage/>},
   { path: "/timetable", element: <TrainTimeTablePage /> },
   { path: "/seat", element: <SeatPage/>},
-  { path: "/seatlist", element: <SeatListPage/>},
+  { path: "/summary", element: <ReservationSummaryPage/>},
   { path: "/"}
 ]);
 
