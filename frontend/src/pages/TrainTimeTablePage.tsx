@@ -181,7 +181,7 @@ export default function TrainTimeTablePage() {
             ${selectedId ? "bg-blue-600" : "bg-gray-300"}
           `}
         >
-          예매 내역 확인
+          예매
         </button>
 
       </div>

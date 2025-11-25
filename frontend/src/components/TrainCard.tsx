@@ -27,20 +27,23 @@ const TrainRow: React.FC<TrainRowProps> = ({
   return (
     <div
       className={`
-        grid grid-cols-[auto_1fr_auto] w-full items-center
+        relative
+        grid grid-cols-[auto_1fr_auto] w-full items-stretch
         rounded-xl border transition-all cursor-pointer select-none
-        ${isSelected ? "border-2 border-blue-500 bg-blue-50" : "border border-gray-300 bg-white"}
+        ${isSelected ? "border-[1.5px] border-blue-500 bg-[#E8F1FF]" : "border border-gray-300 bg-white"}
       `}
       onClick={() => onSelect(id)}
     >
+      
+      <div className="absolute left-0 top-0 h-full w-2 bg-[#1E3A8A] rounded-l-xl"></div>
 
-      {/* LEFT — 로고 + 번호 */}
+      {/* 로고 + 기차 번호*/}
       <div className="flex flex-col items-start pl-5 py-4">
         <img src={ktxLogo} alt="KTX" className="w-8 h-auto mb-1" />
         <span className="text-sm font-semibold">{trainNumber}</span>
       </div>
 
-      {/* MIDDLE — 노선 + 시간 + 소요시간 */}
+      {/* 경로 + 시간대 */}
       <div className="flex flex-col justify-center py-4 pl-2">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-[16px] text-gray-700 whitespace-nowrap">
@@ -57,9 +60,8 @@ const TrainRow: React.FC<TrainRowProps> = ({
         </span>
       </div>
 
-      {/* RIGHT — 가격 박스 */}
+      {/* 가격 */}
       <div className="flex flex-col items-start pr-8 border-l border-gray-300 py-4 pl-4">
-
         <span className="text-sm text-gray-500">일반실</span>
         <span className="font-bold text-[15px] text-gray-800 whitespace-nowrap">
           {normalPrice}
@@ -74,7 +76,6 @@ const TrainRow: React.FC<TrainRowProps> = ({
           </>
         )}
       </div>
-
     </div>
   );
 };
