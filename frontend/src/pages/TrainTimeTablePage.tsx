@@ -154,7 +154,6 @@ export default function TrainTimeTablePage() {
         <main className="mt-6 px-6">
           <p className="text-xl font-bold">원하는 열차 시간을 선택해주세요.</p>
         </main>
-
         
         <div className="mt-4 px-4">
           <div className="bg-white rounded-xl shadow-md overflow-y-scroll no-scrollbar h-[560px] p-2">
@@ -183,11 +182,7 @@ export default function TrainTimeTablePage() {
         >
           예매
         </button>
-<<<<<<< HEAD
-=======
-
->>>>>>> 16050c606410d1b1d9b375acfda5d3cba57bcafe
       </div>
     </div>
   );
-}
+} 
