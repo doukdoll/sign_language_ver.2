@@ -74,6 +74,7 @@ export function useKeypointStreaming(options: StreamingOptions) {
                             sessionId: sessionIdRef.current,
                             timestamp: Date.now(),
                             recognitionTarget: recognitionTarget
+
                         }));
                     }
                 };

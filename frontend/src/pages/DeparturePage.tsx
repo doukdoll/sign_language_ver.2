@@ -12,7 +12,7 @@ export default function DeparturePage() {
     // 이렇게 해야 페이지가 다시 그려져도 웹소켓이 끊기지 않습니다.
     const recognitionOptions = useMemo(() => ({
         serverUrl: import.meta.env.VITE_RECOGNITION_SERVER_URL || 'ws://localhost:8080/api/sign/stream',
-        targetFps: 10,
+        targetFps: 30,
         enableHandFilter: true,
         recognitionTarget: "DEPARTURE", // ★ 자바 서버를 위해 추가! (출발지 페이지니까)
         onRecognized: (label: string, prob: number) => {

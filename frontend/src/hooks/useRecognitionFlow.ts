@@ -51,9 +51,6 @@ export function useRecognitionFlow(options: RecognitionFlowOptions) {
         const video = videoRef.current;
         if (!video) return;
 
-        const width = video.videoWidth || 640;
-        const height = video.videoHeight || 480;
-
         // 137개 키포인트로 변환
         const keypoints137 = buildKeypoints137(
           {
@@ -61,9 +58,7 @@ export function useRecognitionFlow(options: RecognitionFlowOptions) {
             faceLandmarks: results.faceLandmarks,
             leftHandLandmarks: results.leftHandLandmarks,
             rightHandLandmarks: results.rightHandLandmarks,
-          },
-          width,
-          height
+          }
         );
 
         // 손 필터 적용 (옵션)
