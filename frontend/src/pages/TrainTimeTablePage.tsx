@@ -174,7 +174,7 @@ export default function TrainTimeTablePage() {
         <button
           disabled={!selectedId}
           onClick={() =>
-            navigate("/payment", { state: { trainId: selectedId } })
+            navigate("/seat", { state: { trainId: selectedId } })
           }
           className={`mt-4 mx-auto w-[90%] py-3 rounded-xl text-white font-bold
             ${selectedId ? "bg-blue-600" : "bg-gray-300"}
