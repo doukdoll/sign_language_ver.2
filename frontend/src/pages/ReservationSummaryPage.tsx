@@ -1,6 +1,10 @@
 import Header from "../components/Header";
+import { useLocation } from "react-router-dom";
 
 export default function ReservationSummaryPage() {
+  const { state } = useLocation(); 
+  console.log("넘어온 state:", state);
+
   const dummyReservation = {
     departure: "부산",
     arrival: "서울",
@@ -10,10 +14,13 @@ export default function ReservationSummaryPage() {
     trainType: "KTX",
     trainNumber: "103",
     seatClass: "일반석",
-    seats: ["6A", "6B"],
+    seats: ["6A", "6B"],   
     passengers: 2,
     totalPrice: "107,000원",
   };
+
+  // state에 seats 상태가 넘어오면 사용
+  const finalSeats = state?.seats ?? dummyReservation.seats;
 
   return (
     <div className="flex justify-center w-screen h-screen bg-white">
@@ -22,7 +29,6 @@ export default function ReservationSummaryPage() {
         <Header title="예매내역 확인" />
 
         <main className="flex flex-col px-6 mt-8">
-          {/* 안내문 */}
           <p className="text-center text-[17px] font-semibold mb-1">
             선택하신 예매 정보를 확인해주세요.
           </p>
@@ -30,7 +36,6 @@ export default function ReservationSummaryPage() {
             결제를 진행하기 전 마지막 단계입니다.
           </p>
 
-          {/* 하얀 카드 */}
           <div className="bg-white rounded-xl shadow p-6">
             <h3 className="text-lg font-semibold mb-3">
               출발: {dummyReservation.departure} → {dummyReservation.arrival}
@@ -50,15 +55,13 @@ export default function ReservationSummaryPage() {
               </p>
 
               <p>
-                좌석: {dummyReservation.seatClass} /{" "}
-                {dummyReservation.seats.join(", ")}
+                좌석: {dummyReservation.seatClass} / {finalSeats.join(", ")}
               </p>
 
               <p>승객: 성인 {dummyReservation.passengers}명</p>
             </div>
 
             <hr className="my-3 border-t border-[#D5E1F2]" />
-
 
             <div className="flex justify-between items-center">
               <span className="font-semibold text-gray-800 text-base">
@@ -70,7 +73,6 @@ export default function ReservationSummaryPage() {
             </div>
           </div>
 
-          {/* 버튼 */}
           <div className="flex gap-3 mt-10">
             <button className="flex-1 py-3 bg-white border-[2px] border-[#3182F6] text-[#3182F6] rounded-xl font-semibold">
               다시 선택하기
@@ -79,7 +81,6 @@ export default function ReservationSummaryPage() {
               결제하기
             </button>
           </div>
-
         </main>
       </div>
     </div>
