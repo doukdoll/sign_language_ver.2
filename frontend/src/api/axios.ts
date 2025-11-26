@@ -4,7 +4,6 @@ const instance = axios.create({
   baseURL: "http://localhost:8080/api", // 백엔드 서버 주소
 });
 
-
 export const recognizeSignLanguage = async (
   recognitionTarget: string,
   signLanguageData: string

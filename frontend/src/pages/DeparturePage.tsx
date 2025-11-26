@@ -4,6 +4,7 @@ import CameraFeed from "../components/recognition/CameraFeed";
 import RecognitionResult from "../components/recognition/RecognitionResult";
 import RecognitionButtons from "../components/recognition/RecognitionButton";
 import { useRecognitionFlow } from "../hooks/useRecognitionFlow";
+import Header from "../components/Header";
 
 export default function DeparturePage() {
     const navigate = useNavigate();
@@ -46,23 +47,27 @@ export default function DeparturePage() {
     };
 
     return (
-        <div className="flex flex-col items-center bg-gradient-to-b from-blue-50 to-white justify-start mt-8">
-            <h1 className="text-xl font-bold mb-2">어느 역에서 출발하시겠어요?</h1>
-            <p className="text-gray-600 mb-6">출발역 이름을 수어로 표현해주세요.</p>
-
-            {/* 에러 표시 */}
+        <div className="flex items-center justify-center bg-gray-100">
+            <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-2xl flex flex-col overflow-hidden">
+                <Header title="도착역 선택" />
+                <div className="mt-6 px-10">
+                    <h1 className="text-[23px] text-[#3B4252] text-left font-bold mb-1">어느 역에서 출발하시겠어요?</h1>
+                    <p className="text-gray-600 mb-6 text-left">출발역 이름을 수어로 표현해주세요.</p>
+                </div>
+                 {/* 에러 표시 */}
             {state.error && (
                 <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg mb-4">
                     ⚠️ {state.error}
                 </div>
             )}
 
-            {/* 연결 상태 표시 */}
-            {!state.isReady && state.isRecognizing && (
+            {/* 연결 상태 표시--화면에는 xx */}
+           {/*} {!state.isReady && state.isRecognizing && (
                 <div className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-lg mb-4">
                     인식 서버 연결 중...
                 </div>
-            )}
+            )} */}
+
 
             {/* 카메라 피드 영역 */}
             <div className="relative flex items-center justify-center w-full mb-4">
@@ -75,28 +80,38 @@ export default function DeparturePage() {
 
                 {/* 인식 결과를 카메라 하단에 표시 */}
                 {state.recognizedLabel && (
-                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-[85%]">
+                    <div className="absolute  bottom-2 left-1/2 -translate-x-1/2 w-[80%] h-[18%]">
                         <RecognitionResult stationName={state.recognizedLabel} />
                     </div>
                 )}
             </div>
 
-            {/* 디버그 정보 */}
-            {import.meta.env.DEV && (
-                <div className="text-xs text-gray-500 mb-2">
+            {/* 디버그 정보--화면 xx */}
+            {/*{import.meta.env.DEV && (
+                <div className="text-xs text-gray-500 mb-2 text-center">
                     전송 프레임: {state.framesSent} | 확률: {state.recognizedProb?.toFixed(2) || 'N/A'}
                 </div>
-            )}
+            )}*/}
 
             {/* 재시도 및 확인 버튼 */}
+            <div className="flex-none w-full h-[80px] flex flex-col justify-center items-center">
             {state.recognizedLabel && (
-                <div className="flex gap-4 mt-3 justify-center">
+                <div className="w-[84%]  h-[65px]">
                     <RecognitionButtons
                         onRetry={handleRetry}
                         onConfirm={handleConfirm}
                     />
                 </div>
-            )}
+            )} 
+            </div> 
         </div>
+    </div>
+       
+              
+                
+        
+        
+
+           
     );
 }

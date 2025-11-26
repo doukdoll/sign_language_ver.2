@@ -154,7 +154,6 @@ export default function TrainTimeTablePage() {
         <main className="mt-6 px-6">
           <p className="text-xl font-bold">원하는 열차 시간을 선택해주세요.</p>
         </main>
-
         
         <div className="mt-4 px-4">
           <div className="bg-white rounded-xl shadow-md overflow-y-scroll no-scrollbar h-[560px] p-2">
@@ -175,7 +174,7 @@ export default function TrainTimeTablePage() {
         <button
           disabled={!selectedId}
           onClick={() =>
-            navigate("/payment", { state: { trainId: selectedId } })
+            navigate("/seat", { state: { trainId: selectedId } })
           }
           className={`mt-4 mx-auto w-[90%] py-3 rounded-xl text-white font-bold
             ${selectedId ? "bg-blue-600" : "bg-gray-300"}
@@ -183,8 +182,7 @@ export default function TrainTimeTablePage() {
         >
           예매
         </button>
-
       </div>
     </div>
   );
-}
+} 
