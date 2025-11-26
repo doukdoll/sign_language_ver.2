@@ -20,21 +20,25 @@ export default function KTXSeatSelector() {
   }, []);
 
   const { seats, toggleSeat, selectedSeats } = useSeatStatus(initialSeats);
+  console.log("[렌더] 현재 선택된 좌석:", selectedSeats);
 
   // 좌석 선택 완료 핸들러 추가
   const handleConfirm = () => {
+    console.log("[버튼 클릭] 선택된 좌석:", selectedSeats);
     if (selectedSeats.length > 0) {
       // 선택된 좌석 정보를 state로 전달하면서 이동
       navigate("/summary", { 
-        state: { 
-          selectedSeats,
-          // 필요한 다른 정보도 함께 전달 가능
+        state: 
+          { seats: selectedSeats}
+          // 좌석 선택 상태말고도 나머지 상태도 다 넘기기
           // trainInfo: { ... }
           // 나중에 추가
-        } 
       });
     }
   };
+
+  
+
 
   return (
     <div className="flex justify-center w-screen h-screen bg-white">
@@ -68,7 +72,7 @@ export default function KTXSeatSelector() {
             </div>
 
             <button
-              onClick={handleConfirm} // 추가
+              onClick={handleConfirm} 
               className="w-full bg-blue-600 text-white py-5 rounded-lg text-xl font-bold disabled:bg-gray-500 disabled:cursor-not-allowed active:scale-98 transition-transform" // active 효과 추가
               disabled={selectedSeats.length === 0}
             >
