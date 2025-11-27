@@ -146,6 +146,22 @@ export function useKeypointStreaming(options: StreamingOptions) {
         };
     }, [enabled, serverUrl, recognitionTarget]);
 
+    // ★★★ [추가] 프레임 카운터 초기화 함수
+    const resetFrameCount = useCallback(() => {
+        // 1. 내부 로직용 카운터 리셋
+        frameCountRef.current = 0;
+        logThrottleRef.current = 0;
+
+        // 3. UI 표시용 상태 리셋 (isConnected는 건드리지 않음)
+        setState(prev => ({
+            ...prev,
+            framesSent: 0,
+            lastError: null
+        }));
+
+        console.log("🔄 프레임 카운트 및 상태가 초기화되었습니다.");
+    }, []);
+
     const sendKeypoints = useCallback(
         (keypoints: number[][]) => {
             if (!enabled || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
@@ -196,5 +212,6 @@ export function useKeypointStreaming(options: StreamingOptions) {
     return {
         sendKeypoints,
         state,
+        resetFrameCount,
     };
 }

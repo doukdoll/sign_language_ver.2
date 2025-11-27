@@ -30,15 +30,17 @@ public class TrainDataLoader {
 
     // CSV 파일에 있는 역 이름을 순서대로 매핑
     private static final List<String> STATIONS_DOWN = Arrays.asList(
-        "행신", "서울역", "영등포", "수원", "광명", "천안아산", "오송", "대전",
+        "행신", "서울", "영등포", "수원", "광명", "천안아산", "오송", "대전",
         "김천구미", "서대구", "동대구", "경주", "울산", "경산", "밀양", "물금", "구포", "부산"
     );
     private static final List<String> STATIONS_UP = Arrays.asList(
             "부산", "구포", "물금", "밀양", "경산", "울산", "경주", "동대구",
-            "서대구", "김천구미", "대전", "오송", "천안아산", "광명", "수원", "영등포", "서울역", "행신"
+            "서대구", "김천구미", "대전", "오송", "천안아산", "광명", "수원", "영등포", "서울", "행신"
     );
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
+    // [추가됨] 로그 출력용 날짜 포맷터 선언 (이 부분이 없어서 오류가 났었습니다)
+    private static final DateTimeFormatter LOG_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public TrainDataLoader(TrainScheduleRepository trainScheduleRepository) {
         this.trainScheduleRepository = trainScheduleRepository;
@@ -105,7 +107,7 @@ public class TrainDataLoader {
                             LocalTime arrTime = stationTimes.get(arrivalStation);
                             if (arrTime == null) continue; // 도착 시간이 없는 역은 건너뜀
 
-                            // 임시 날짜 설정 (예: 2025년 10월 15일)
+                            // 임시 날짜 설정 (오늘)
                             LocalDate baseDate = LocalDate.now();
 
                             LocalDateTime departureDateTime = LocalDateTime.of(baseDate, depTime);
@@ -133,6 +135,34 @@ public class TrainDataLoader {
                 // 모든 스케줄을 한 번에 저장
                 if (!schedulesToSave.isEmpty()) {
                     trainScheduleRepository.saveAll(schedulesToSave);
+                    // [추가된 코드 시작] ----------------------------------------------------------------
+                    // 저장된 데이터의 상위 5개를 미리보기(head) 형태로 출력합니다.
+                    System.out.println("===============================================================");
+                    System.out.println("[Data Load Preview] 파일명: " + filename);
+                    System.out.println(String.format("%-10s | %-6s | %-6s -> %-6s | %-16s -> %-16s",
+                            "열차번호", "종류", "출발", "도착", "출발시간", "도착시간"));
+                    System.out.println("---------------------------------------------------------------");
+
+                    // 최대 5개까지만 출력 (head 기능 구현)
+                    int limit = Math.min(schedulesToSave.size(), 5);
+                    for (int i = 0; i < limit; i++) {
+                        TrainSchedule s = schedulesToSave.get(i);
+                        System.out.println(String.format("%-10s | %-6s | %-6s -> %-6s | %-16s -> %-16s",
+                                s.getTrainNumber(),
+                                s.getTrainName(),
+                                s.getDepartureStation(),
+                                s.getArrivalStation(),
+                                s.getDepartureTime().format(LOG_TIME_FORMATTER),
+                                s.getArrivalTime().format(LOG_TIME_FORMATTER)
+                        ));
+                    }
+
+                    if (schedulesToSave.size() > 5) {
+                        System.out.println("... 외 " + (schedulesToSave.size() - 5) + "건 생략됨");
+                    }
+                    System.out.println("[Total Count] 총 " + schedulesToSave.size() + "건 저장 완료");
+                    System.out.println("===============================================================");
+                    // [추가된 코드 끝] ------------------------------------------------------------------
                 }
             }
         } catch (IOException | CsvValidationException e) {

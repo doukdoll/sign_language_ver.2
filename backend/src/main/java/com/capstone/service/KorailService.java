@@ -39,14 +39,21 @@ public class KorailService {
         List<TrainSchedule> filteredSchedules = new ArrayList<>();
 
         if (departure != null && !departure.isBlank() && destination != null && !destination.isBlank()) {
-            logger.info("온 시간:{}", departureFrom);
-            logger.info("정해진 시간:{}", effectiveDepartureFrom);
             if ("대구".equalsIgnoreCase(destination.trim())) {
                 List<String> daeguStations = Arrays.asList("동대구", "서대구");
                 filteredSchedules = trainScheduleRepository.findByDepartureStationAndArrivalStationInAndDepartureTimeAfterOrderByDepartureTimeAsc(
                         departure.trim(), daeguStations, effectiveDepartureFrom
                 );
-            } else {
+            }
+
+            else if("대구".equalsIgnoreCase(departure.trim())){
+                List<String> daeguStations = Arrays.asList("동대구", "서대구");
+                filteredSchedules = trainScheduleRepository.findByDepartureStationInAndArrivalStationAndDepartureTimeAfterOrderByDepartureTimeAsc(
+                        daeguStations, destination.trim() ,effectiveDepartureFrom
+                );
+            }
+
+            else {
                 filteredSchedules = trainScheduleRepository.findByDepartureStationAndArrivalStationAndDepartureTimeAfterOrderByDepartureTimeAsc(
                         departure.trim(), destination.trim(), effectiveDepartureFrom
                 );
