@@ -47,4 +47,18 @@ public interface TrainScheduleRepository extends JpaRepository<TrainSchedule, Lo
             LocalDateTime departureTime,
             LocalDateTime arrivalTime
     );
+
+    // 출발역, 도착역 리스트, 출발 시간 이후 기준으로 정렬된 열차 시간표 조회 (대구용)
+    List<TrainSchedule> findByDepartureStationAndArrivalStationInAndDepartureTimeAfterOrderByDepartureTimeAsc(
+            String departureStation,
+            List<String> arrivalStations,
+            LocalDateTime departureTime
+    );
+
+    // 출발역 리스트, 도착역, 출발 시간 이후 기준으로 정렬된 열차 시간표 조회 (대구용)
+    List<TrainSchedule> findByDepartureStationInAndArrivalStationAndDepartureTimeAfterOrderByDepartureTimeAsc(
+            List<String> departureStation,
+            String arrivalStations,
+            LocalDateTime departureTime
+    );
 }

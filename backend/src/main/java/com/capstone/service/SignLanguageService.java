@@ -97,7 +97,7 @@ public class SignLanguageService {
 
     public CityRecognitionResponseDto recognizeCity(SignLanguageInputDto signLanguageInputDto) {
         // [수정 1] getSignLanguageData() -> getKeypoints()
-        logger.info("서비스에서 수어 데이터를 처리 중입니다: {}", signLanguageInputDto.getKeypoints());
+        logger.info("서비스에서 수어 데이터를 처리 중입니다: {}", signLanguageInputDto.getSignLanguageData());
         logger.info("인식 대상: {}", signLanguageInputDto.getRecognitionTarget());
 
         CityRecognitionResponseDto response = new CityRecognitionResponseDto();
@@ -118,7 +118,7 @@ public class SignLanguageService {
 
     public DateTimeRecognitionResponseDto recognizeDateTime(SignLanguageInputDto signLanguageInputDto) {
         // [수정 2] getSignLanguageData() -> getKeypoints()
-        logger.info("서비스에서 수어 데이터를 처리 중입니다 (날짜/시간): {}", signLanguageInputDto.getKeypoints());
+        logger.info("서비스에서 수어 데이터를 처리 중입니다 (날짜/시간): {}", signLanguageInputDto.getSignLanguageData());
 
         DateTimeRecognitionResponseDto response = new DateTimeRecognitionResponseDto();
         response.setRecognizedDate("2025-11-05");
@@ -128,7 +128,7 @@ public class SignLanguageService {
 
     public PassengerRecognitionResponseDto recognizePassengers(SignLanguageInputDto signLanguageInputDto) {
         // [수정 3] getSignLanguageData() -> getKeypoints()
-        logger.info("서비스에서 수어 데이터를 처리 중입니다 (승객 수): {}", signLanguageInputDto.getKeypoints());
+        logger.info("서비스에서 수어 데이터를 처리 중입니다 (승객 수): {}", signLanguageInputDto.getSignLanguageData());
 
         PassengerRecognitionResponseDto response = new PassengerRecognitionResponseDto();
         response.setRecognizedPassengers(2);
@@ -137,7 +137,7 @@ public class SignLanguageService {
 
     public TripTypeRecognitionResponseDto recognizeTripType(SignLanguageInputDto signLanguageInputDto) {
         // [수정 4] getSignLanguageData() -> getKeypoints()
-        logger.info("서비스에서 수어 데이터를 처리 중입니다 (편도/왕복): {}", signLanguageInputDto.getKeypoints());
+        logger.info("서비스에서 수어 데이터를 처리 중입니다 (편도/왕복): {}", signLanguageInputDto.getSignLanguageData());
 
         TripTypeRecognitionResponseDto response = new TripTypeRecognitionResponseDto();
         response.setRecognizedTripType("왕복");
@@ -146,7 +146,7 @@ public class SignLanguageService {
 
     public SeatClassRecognitionResponseDto recognizeSeatClass(SignLanguageInputDto signLanguageInputDto) {
         // [수정 5] getSignLanguageData() -> getKeypoints()
-        logger.info("서비스에서 수어 데이터를 처리 중입니다 (좌석 등급): {}", signLanguageInputDto.getKeypoints());
+        logger.info("서비스에서 수어 데이터를 처리 중입니다 (좌석 등급): {}", signLanguageInputDto.getSignLanguageData());
 
         SeatClassRecognitionResponseDto response = new SeatClassRecognitionResponseDto();
         response.setRecognizedSeatClass("일반실");

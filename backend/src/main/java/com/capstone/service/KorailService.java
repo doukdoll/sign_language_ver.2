@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import com.capstone.entity.TrainSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Arrays;
 
 @Service
 public class KorailService {
@@ -38,9 +39,25 @@ public class KorailService {
         List<TrainSchedule> filteredSchedules = new ArrayList<>();
 
         if (departure != null && !departure.isBlank() && destination != null && !destination.isBlank()) {
-            filteredSchedules = trainScheduleRepository.findByDepartureStationAndArrivalStationAndDepartureTimeAfterOrderByDepartureTimeAsc(
-                    departure.trim(), destination.trim(), effectiveDepartureFrom
-            );
+            if ("대구".equalsIgnoreCase(destination.trim())) {
+                List<String> daeguStations = Arrays.asList("동대구", "서대구");
+                filteredSchedules = trainScheduleRepository.findByDepartureStationAndArrivalStationInAndDepartureTimeAfterOrderByDepartureTimeAsc(
+                        departure.trim(), daeguStations, effectiveDepartureFrom
+                );
+            }
+
+            else if("대구".equalsIgnoreCase(departure.trim())){
+                List<String> daeguStations = Arrays.asList("동대구", "서대구");
+                filteredSchedules = trainScheduleRepository.findByDepartureStationInAndArrivalStationAndDepartureTimeAfterOrderByDepartureTimeAsc(
+                        daeguStations, destination.trim() ,effectiveDepartureFrom
+                );
+            }
+
+            else {
+                filteredSchedules = trainScheduleRepository.findByDepartureStationAndArrivalStationAndDepartureTimeAfterOrderByDepartureTimeAsc(
+                        departure.trim(), destination.trim(), effectiveDepartureFrom
+                );
+            }
         } else if (departure != null && !departure.isBlank()) {
             // 출발지만 있을 경우, 해당 출발지의 모든 도착지에 대한 시간표를 필터링
             filteredSchedules = trainScheduleRepository.findByDepartureStationAndDepartureTimeAfterOrderByDepartureTimeAsc(

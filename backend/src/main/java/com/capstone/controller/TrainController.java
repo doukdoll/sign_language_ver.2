@@ -2,6 +2,7 @@ package com.capstone.controller;
 
 import com.capstone.dto.TrainInfoDto;
 import com.capstone.service.KorailService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,13 +25,27 @@ public class TrainController {
     public List<TrainInfoDto> search(
             @RequestParam(name = "departure", required = false) String departure,
             @RequestParam(name = "destination", required = false) String destination,
-            @RequestParam(name = "departureFrom", required = false) String departureFrom,
-            @RequestParam(name = "departureTo", required = false) String departureTo
+
+            // 🔥 String 대신 LocalDateTime으로 받고, 패턴을 지정합니다.
+            @RequestParam(name = "departureFrom", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm") LocalDateTime departureFrom,
+
+            @RequestParam(name = "departureTo", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm") LocalDateTime departureTo
     ) {
-        LocalDateTime from = parseDateTime(departureFrom);
-        LocalDateTime to = parseDateTime(departureTo);
-        return korailService.findSchedules(departure, destination, from, to);
+        // 수동 파싱 로직(parseDateTime) 필요 없음! 바로 서비스로 넘기면 됩니다.
+        return korailService.findSchedules(departure, destination, departureFrom, departureTo);
     }
+//    public List<TrainInfoDto> search(
+//            @RequestParam(name = "departure", required = false) String departure,
+//            @RequestParam(name = "destination", required = false) String destination,
+//            @RequestParam(name = "departureFrom", required = false) String departureFrom,
+//            @RequestParam(name = "departureTo", required = false) String departureTo
+//    ) {
+//        LocalDateTime from = parseDateTime(departureFrom);
+//        LocalDateTime to = parseDateTime(departureTo);
+//        return korailService.findSchedules(departure, destination, from, to);
+//    }
 
     private LocalDateTime parseDateTime(String text) {
         if (text == null || text.isBlank()) return null;

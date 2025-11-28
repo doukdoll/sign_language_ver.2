@@ -16,7 +16,7 @@ export default function TripTypePage() {
 
       
       navigate("/datetime", {
-        state: { tripType: type },
+        state: { departureStation, arrivalStation, tripType: type },
       });
 
     } catch (error) {

@@ -85,11 +85,21 @@ export function useKeypointStreaming(options: StreamingOptions) {
                         // 서버로부터 온 응답 로그 (디버깅용)
                         console.log("📩 서버 응답 수신:", data);
 
-                        if (data.departureCity && onRecognizedRef.current) {
-                            onRecognizedRef.current(data.departureCity, data.recognizedProb ?? 0);
-                        } else if (data.type === 'RESULT' && onRecognizedRef.current) {
-                            onRecognizedRef.current(data.label, data.prob ?? 0);
+                        let recognizedLabel = null;
+                        let recognizedProb = data.recognizedProb ?? 0;
+
+                        if (recognitionTarget === "DEPARTURE" && data.departureCity) {
+                            recognizedLabel = data.departureCity;
+                        } else if (recognitionTarget === "ARRIVAL" && data.arrivalCity) {
+                            recognizedLabel = data.arrivalCity;
+                        } else if (data.type === 'RESULT' && data.label) { // Fallback for generic RESULT type
+                            recognizedLabel = data.label;
                         }
+
+                        if (recognizedLabel !== null && onRecognizedRef.current) {
+                            onRecognizedRef.current(recognizedLabel, recognizedProb);
+                        }
+
                     } catch (err) {
                         console.error('메시지 파싱 실패:', err);
                     }
@@ -135,6 +145,22 @@ export function useKeypointStreaming(options: StreamingOptions) {
             }
         };
     }, [enabled, serverUrl, recognitionTarget]);
+
+    // ★★★ [추가] 프레임 카운터 초기화 함수
+    const resetFrameCount = useCallback(() => {
+        // 1. 내부 로직용 카운터 리셋
+        frameCountRef.current = 0;
+        logThrottleRef.current = 0;
+
+        // 3. UI 표시용 상태 리셋 (isConnected는 건드리지 않음)
+        setState(prev => ({
+            ...prev,
+            framesSent: 0,
+            lastError: null
+        }));
+
+        console.log("🔄 프레임 카운트 및 상태가 초기화되었습니다.");
+    }, []);
 
     const sendKeypoints = useCallback(
         (keypoints: number[][]) => {
@@ -186,5 +212,6 @@ export function useKeypointStreaming(options: StreamingOptions) {
     return {
         sendKeypoints,
         state,
+        resetFrameCount,
     };
 }

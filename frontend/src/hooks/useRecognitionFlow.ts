@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { Results } from '@mediapipe/holistic';
 import { useHolistic } from './useHolistic';
-import { useKeypointStreaming } from './useKeypointStreaming';
+import { useKeypointStreaming} from './useKeypointStreaming';
 import { buildKeypoints137, hasValidHands } from '../utils/mediapipeToOpenpose';
 
 export interface RecognitionFlowOptions {
@@ -89,7 +89,7 @@ export function useRecognitionFlow(options: RecognitionFlowOptions) {
   );
 
   // 스트리밍 초기화
-  const { sendKeypoints, state: streamingState } = useKeypointStreaming({
+  const { sendKeypoints, state: streamingState, resetFrameCount } = useKeypointStreaming({
     enabled: state.isRecognizing,
     serverUrl,
     targetFps,
@@ -147,7 +147,13 @@ export function useRecognitionFlow(options: RecognitionFlowOptions) {
       recognizedLabel: null,
       recognizedProb: null,
     }));
-  }, []);
+
+    // ★ 프레임 번호 초기화 함수 실행
+    if (resetFrameCount) {
+      resetFrameCount();
+    }
+
+  }, [resetFrameCount]);
 
   return {
     videoRef,

@@ -3,12 +3,16 @@ import ktxLogo from "../components/icons/KTX_logo.svg.png";
 
 export interface TrainRowProps {
   id: string;
+  trainType?: string;
   trainNumber: string;
   departTime: string;
   arriveTime: string;
   duration: string;
-  normalPrice?: string;
+  normalPrice: string;
+  discountText?: string;
   specialPrice?: string;
+  departureStation: string; // Add this line
+  arrivalStation: string;   // Add this line
   onSelect: (id: string) => void;
   isSelected: boolean;
 }
@@ -21,6 +25,8 @@ const TrainRow: React.FC<TrainRowProps> = ({
   duration,
   normalPrice,
   specialPrice,
+  departureStation, // Add this line
+  arrivalStation,   // Add this line
   onSelect,
   isSelected,
 }) => {
@@ -47,7 +53,7 @@ const TrainRow: React.FC<TrainRowProps> = ({
       <div className="flex flex-col justify-center py-4 pl-2">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-[16px] text-gray-700 whitespace-nowrap">
-            서울 → 부산
+            {departureStation} → {arrivalStation}
           </span>
 
           <span className="font-bold text-[15px] text-gray-800 whitespace-nowrap">
