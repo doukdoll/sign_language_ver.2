@@ -6,26 +6,20 @@
 
 ### 파일 목록
 
-- **`multi_class_auto_model.pt`** (3.8 MB) - 배포용 PyTorch 모델
-- **`multi_class_auto.onnx`** (약 3.9 MB) - ONNX 런타임 호환 모델
+- **`.onnx`** - ONNX 런타임 호환 모델
 - **`deployment_info.yaml`** - 모델 메타정보 및 설정 (PyTorch/ONNX 공통)
-- **`vocabulary.txt`** - 클래스 어휘 사전 (6개 클래스)
+- **`vocabulary.txt`** - 클래스 어휘 사전 (12개 클래스)
 
 ## 🎯 모델 정보
 
-- **클래스 수**: 6개
-- **클래스 목록**: 급하다, 슬프다, 싫어하다, 안타깝다, 어색하다, <unk>
-- **파라미터 수**: 997,486개
-- **검증 정확도**: 86.67% (Iteration 270)
-- **F1 Score**: 86.48%
-- **Best Loss**: 0.338 (낮을수록 좋음)
+- **클래스 수**: 12개
 - **특징 크기**: 274 (137 keypoints × 2)
-- **최대 시퀀스 길이**: 200 프레임
+- **최대 시퀀스 길이**: 180 프레임
 
 ## 🏗️ 모델 아키텍처
 
 ```
-Encoder: GRU (bidirectional)
+Encoder: GRU (bidirectional) + Attention
 ├─ Hidden Size: 220
 ├─ Num Layers: 1
 └─ Dropout: 0.3
@@ -34,7 +28,7 @@ Embeddings: Spatial Embeddings
 └─ Embedding Dim: 440
 
 Output Layer: Linear
-└─ 6 classes
+└─ 12 classes
 ```
 
 ## 🚀 사용 방법
