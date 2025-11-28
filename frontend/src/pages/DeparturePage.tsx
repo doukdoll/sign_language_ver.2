@@ -49,7 +49,7 @@ export default function DeparturePage() {
     return (
         <div className="flex items-center justify-center bg-gray-100">
             <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-2xl flex flex-col overflow-hidden">
-                <Header title="도착역 선택" />
+                <Header title="출발역 선택" />
                 <div className="mt-6 px-10">
                     <h1 className="text-[23px] text-[#3B4252] text-left font-bold mb-1">어느 역에서 출발하시겠어요?</h1>
                     <p className="text-gray-600 mb-6 text-left">출발역 이름을 수어로 표현해주세요.</p>

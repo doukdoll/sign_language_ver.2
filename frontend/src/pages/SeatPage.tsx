@@ -1,89 +1,147 @@
-import { useMemo } from "react";
-import { useNavigate } from "react-router-dom"; // 추가
+import { useMemo, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom"; // 1. useLocation 추가
 import { useSeatStatus } from "../hooks/useSeatStatus";
 import SeatGrid from "../components/seats/SeatGrid";
 import Header from "../components/Header";
 
 export default function KTXSeatSelector() {
-  const navigate = useNavigate(); // 추가
+    const navigate = useNavigate();
+    const location = useLocation(); // 2. location 훅 사용
 
-  // 초기 좌석 상태 고정
-  const initialSeats = useMemo(() => {
-    const seats: any = {};
-    for (let row = 1; row <= 7; row++) {
-      for (let col of ["A", "B", "C", "D"]) {
-        const seat = `${row}${col}`;
-        seats[seat] = Math.random() > 0.75 ? "occupied" : "available";
-      }
-    }
-    return seats;
-  }, []);
+    // 3. 이전 페이지에서 보낸 모든 데이터 받기 (구조 분해 할당)
+    const {
+        departureStation,
+        arrivalStation,
+        tripType,
+        departureDate,
+        departureHour,
+        returnDate,
+        returnHour,
+        passengers,      // 가장 중요: 탑승 인원 수
+        selectedTrain    // 가장 중요: 기차 정보
+    } = location.state || {};
 
-  const { seats, toggleSeat, selectedSeats } = useSeatStatus(initialSeats);
-  console.log("[렌더] 현재 선택된 좌석:", selectedSeats);
+    // 초기 좌석 상태 고정 (기존 코드 유지)
+    const initialSeats = useMemo(() => {
+        const seats: any = {};
+        for (let row = 1; row <= 7; row++) {
+            for (let col of ["A", "B", "C", "D"]) {
+                const seat = `${row}${col}`;
+                seats[seat] = Math.random() > 0.75 ? "occupied" : "available";
+            }
+        }
+        return seats;
+    }, []);
 
-  // 좌석 선택 완료 핸들러 추가
-  const handleConfirm = () => {
-    console.log("[버튼 클릭] 선택된 좌석:", selectedSeats);
-    if (selectedSeats.length > 0) {
-      // 선택된 좌석 정보를 state로 전달하면서 이동
-      navigate("/summary", { 
-        state: 
-          { seats: selectedSeats}
-          // 좌석 선택 상태말고도 나머지 상태도 다 넘기기
-          // trainInfo: { ... }
-          // 나중에 추가
-      });
-    }
-  };
+    // 4. useSeatStatus에 '최대 선택 가능 인원(passengers)'을 전달할 수 있다면 좋습니다.
+    // (만약 커스텀 훅이 기능을 지원하지 않는다면 아래 handleConfirm에서 검사해야 합니다.)
+    const { seats, toggleSeat, selectedSeats } = useSeatStatus(initialSeats);
 
-  
+    // 데이터 잘 들어왔는지 확인용 로그
+    useEffect(() => {
+        console.log("📝 SeatPage 수신 데이터:", { passengers, selectedTrain });
+        if (!passengers) {
+            console.warn("⚠️ 인원수 정보가 없습니다. (테스트가 아니라면 오류 상황)");
+        }
+    }, [passengers, selectedTrain]);
 
 
-  return (
-    <div className="flex justify-center w-screen h-screen bg-white">
-      <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-xl flex flex-col">
+    // 좌석 선택 완료 핸들러
+    const handleConfirm = () => {
+        console.log("[버튼 클릭] 선택된 좌석:", selectedSeats);
 
-        {/* 상단 헤더 */}
-        <Header title="좌석 선택" />
+        // 5. [유효성 검사] 탑승 인원수와 선택한 좌석 수가 일치하는지 확인
+        if (passengers && selectedSeats.length !== passengers) {
+            alert(`탑승 인원은 ${passengers}명입니다. 좌석 ${passengers}개를 선택해주세요.`);
+            return;
+        }
 
-        {/* 전체 컨텐츠 */}
-        <div className="flex flex-col flex-1 bg-gray-100">
+        if (selectedSeats.length > 0) {
+            // 6. [데이터 전달] 기존 정보 + 좌석 정보를 모두 담아서 다음 페이지로 이동
+            navigate("/summary", {
+                state: {
+                    // 기존 여행 정보 유지
+                    departureStation,
+                    arrivalStation,
+                    tripType,
+                    departureDate,
+                    departureHour,
+                    returnDate,
+                    returnHour,
+                    passengers,
+                    selectedTrain,
 
-          
+                    // 새로 선택한 좌석 정보
+                    seats: selectedSeats,
 
-          {/* 좌석 그리드 */}
-          <div className="flex-1 overflow-y-auto bg-white p-6">
-            <SeatGrid seats={seats} onSelect={toggleSeat} />
-          </div>
+                    // (선택 사항) 총 결제 금액 계산해서 넘기기
+                    totalPrice: (selectedTrain?.price || 0) * passengers
+                }
+            });
+        }
+    };
 
-          {/* 하단 선택 좌석 정보 */}
-          <div className="bg-gray-700 text-white p-6">
-            <div className="text-center mb-2 text-lg font-bold">선택 좌석</div>
+    return (
+        <div className="flex justify-center w-screen h-screen bg-white">
+            <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-xl flex flex-col">
 
-            <div className="bg-gray-800 rounded-lg p-4 mb-4 min-h-16 flex items-center justify-center">
-              {selectedSeats.length > 0 ? (
-                <div className="text-2xl font-bold">
-                  {selectedSeats.join(" / ")}
+                {/* 상단 헤더 */}
+                <Header title="좌석 선택" />
+
+                {/* 전체 컨텐츠 */}
+                <div className="flex flex-col flex-1 bg-gray-100">
+
+                    {/* (선택 사항) 상단에 현재 상태 표시 */}
+                    <div className="bg-white p-4 pb-2 border-b">
+                        <p className="text-gray-700 font-bold">
+                            {departureStation} ➔ {arrivalStation}
+                        </p>
+                        <p className="text-sm text-blue-600 font-bold mt-1">
+                            {passengers ? `${passengers}명 탑승` : "인원 정보 없음"}
+                        </p>
+                    </div>
+
+                    {/* 좌석 그리드 */}
+                    <div className="flex-1 overflow-y-auto bg-white p-6">
+                        {/* 주의: useSeatStatus 훅 내부에서 'passengers' 수만큼만
+               선택되도록 제한하는 로직이 없다면, 여기서 UI적으로 막거나
+               handleConfirm에서 경고를 띄워야 합니다.
+            */}
+                        <SeatGrid seats={seats} onSelect={toggleSeat} />
+                    </div>
+
+                    {/* 하단 선택 좌석 정보 */}
+                    <div className="bg-gray-700 text-white p-6">
+                        <div className="text-center mb-2 text-lg font-bold">선택 좌석</div>
+
+                        <div className="bg-gray-800 rounded-lg p-4 mb-4 min-h-16 flex items-center justify-center">
+                            {selectedSeats.length > 0 ? (
+                                <div className="text-2xl font-bold">
+                                    {selectedSeats.join(" / ")}
+                                </div>
+                            ) : (
+                                <div className="text-gray-400 text-lg">좌석을 선택해주세요</div>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={handleConfirm}
+                            // 7. 인원수와 선택 좌석 수가 다르면 버튼 스타일 변경 (선택 사항)
+                            className={`w-full py-5 rounded-lg text-xl font-bold transition-transform active:scale-98
+                ${selectedSeats.length > 0
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-500 text-gray-300 cursor-not-allowed"}
+              `}
+                            disabled={selectedSeats.length === 0}
+                        >
+                            {passengers
+                                ? `${selectedSeats.length}/${passengers}석 선택 완료` // 인원수 표시
+                                : "선택 완료"}
+                        </button>
+                    </div>
+
                 </div>
-              ) : (
-                <div className="text-gray-400 text-lg">좌석을 선택해주세요</div>
-              )}
             </div>
-
-            <button
-              onClick={handleConfirm} 
-              className="w-full bg-blue-600 text-white py-5 rounded-lg text-xl font-bold disabled:bg-gray-500 disabled:cursor-not-allowed active:scale-98 transition-transform" // active 효과 추가
-              disabled={selectedSeats.length === 0}
-            >
-              {selectedSeats.length > 0
-                ? `${selectedSeats.length}석 선택 완료`
-                : "좌석 선택"}
-            </button>
-          </div>
-
         </div>
-      </div>
-    </div>
-  );
+    );
 }

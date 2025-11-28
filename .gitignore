@@ -10,6 +10,13 @@
 /.gradle/
 .gradle/
 
+
+#Build file
+
+/build/
+build/
+/build
+
 # BlueJ files
 *.ctxt
 
