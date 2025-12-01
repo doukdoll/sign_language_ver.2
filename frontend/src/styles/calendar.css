@@ -1,7 +1,7 @@
 .custom-calendar {
   background: white;
   border-radius: 16px;
-  padding: 16px;
+  padding: 28px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   border: 1px solid #e5e7eb;
   width: 100%;
@@ -10,11 +10,10 @@
 
 /* 헤더 */
 .react-datepicker__header {
-  background-color: #f8fafc;
+  background-color: #f1f5f9;
   border-bottom: 1px solid #e2e8f0;
-  padding-top: 14px;
+  padding-top: 12px;
   padding-bottom: 14px;
-  border-radius: 16px 16px 0 0;
 }
 
 .react-datepicker__current-month {
@@ -99,3 +98,27 @@
   justify-content: center;
   width: 100%;
 }
+
+/* 📌 달력 좌우 화살표 위치/모양 고정 */
+.react-datepicker__navigation {
+  top: 35px !important;           /* 화살표 수직 정렬 */
+  width: 70px !important;
+  height: 50px !important;
+}
+
+.react-datepicker__navigation--previous {
+  left: 15px !important;          /* 왼쪽 화살표 정확한 위치 */
+}
+
+.react-datepicker__navigation--next {
+  right: 15px !important;         /* 오른쪽 화살표 정확한 위치 */
+}
+
+/* 화살표 아이콘 스타일 */
+.react-datepicker__navigation-icon::before {
+  border-color: #475569 !important;   /* 화살표 색상 (Slate-600) */
+  border-width: 2px 2px 0 0 !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+
