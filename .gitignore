@@ -83,6 +83,9 @@ logs/
 *.tmp
 *.temp
 
+
+__pycache__
+
 # AI Model Data (too large for git)
 Data/
 *.mp4
