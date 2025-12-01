@@ -27,26 +27,27 @@ realtime:
     min_detection_confidence: 0.5
     min_tracking_confidence: 0.5
 
-# 세그멘테이션 설정
-# segmenter:
-#   prob_thr: 0.9 # 모델 예측 확률 임계값 (대구 가중치 조정을 위해 높임)
-#   fuse_tau: 0.6 # 속도+확률 융합 임계값
-#   min_on: 5 # 연속 조건 만족 프레임 수
-#   cooldown: 20 # 방출 후 대기 프레임 (중복 방지)
-#   w_motion: 0.5 # 융합 시 속도 가중치
-#   w_prob: 0.5 # 융합 시 확률 가중치
-#   rearm_tau: 0.40 # 재무장 임계값
-#   rearm_off: 10 # 재무장 대기 프레임
+  # 세그멘테이션 설정
+  segmenter:
+    prob_thr: 0.9 # 모델 예측 확률 임계값 (대구 가중치 조정을 위해 높임)
+    fuse_tau: 0.6 # 속도+확률 융합 임계값
+    min_on: 5 # 연속 조건 만족 프레임 수
+    cooldown: 20 # 방출 후 대기 프레임 (중복 방지)
+    w_motion: 0.5 # 융합 시 속도 가중치
+    w_prob: 0.5 # 융합 시 확률 가중치
+    rearm_tau: 0.40 # 재무장 임계값
+    rearm_off: 10 # 재무장 대기 프레임
 #정밀도 우선 세그멘테이션 설정
-segmenter: # 이 설정은 대전 추론을 낮추고 경주,대구를 높이게 타겟함.
-  prob_thr: 0.85
-  fuse_tau: 0.68
-  min_on: 8
-  cooldown: 22
-  w_motion: 0.55
-  w_prob: 0.45
-  rearm_tau: 0.35
-  rearm_off: 14
+#
+#segmenter: # 이 설정은 대전 추론을 낮추고 경주,대구를 높이게 타겟함.
+#  prob_thr: 0.85
+#  fuse_tau: 0.68
+#  min_on: 8
+#  cooldown: 22
+#  w_motion: 0.55
+#  w_prob: 0.45
+#  rearm_tau: 0.35
+#  rearm_off: 14
 # segmenter: #균형 설정
 #   prob_thr: 0.78
 #   fuse_tau: 0.65
