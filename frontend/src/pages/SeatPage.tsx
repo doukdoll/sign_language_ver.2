@@ -47,10 +47,14 @@ export default function KTXSeatSelector() {
         {/* 상단 헤더 */}
         <Header title="좌석 선택" />
 
-        {/* 전체 컨텐츠 */}
-        <div className="flex flex-col flex-1 bg-gray-100">
+        <div>
+          dkflj
+        </div>
 
-          
+        {/* 전체 컨텐츠 */}
+        <div className="flex flex-col flex bg-gray-100">
+
+        
 
           {/* 좌석 그리드 */}
           <div className="flex-1 overflow-y-auto bg-white p-6">

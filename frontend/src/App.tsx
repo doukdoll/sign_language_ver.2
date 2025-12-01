@@ -9,6 +9,7 @@ import SeatPage from "./pages/SeatPage";
 import DeparturePage from "./pages/DeparturePage";
 import ArrivalPage from "./pages/ArrivalPage";
 import ReservationSummaryPage from "./pages/ReservationSummaryPage";
+import PaymentPage from "./pages/PayMentPage";
 
 
 const router = createBrowserRouter([
@@ -21,6 +22,7 @@ const router = createBrowserRouter([
   { path: "/timetable", element: <TrainTimeTablePage /> },
   { path: "/seat", element: <SeatPage/>},
   { path: "/summary", element: <ReservationSummaryPage/>},
+  { path: "/payment", element: <PaymentPage/>},
 ]);
 
 function App() {

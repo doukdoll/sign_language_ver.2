@@ -1,8 +1,10 @@
 import Header from "../components/Header";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function ReservationSummaryPage() {
-  const { state } = useLocation(); 
+  const { state } = useLocation();
+  const navigate = useNavigate();
+
   console.log("넘어온 state:", state);
 
   const dummyReservation = {
@@ -14,13 +16,23 @@ export default function ReservationSummaryPage() {
     trainType: "KTX",
     trainNumber: "103",
     seatClass: "일반석",
-    seats: ["6A", "6B"],   
+    seats: ["6A", "6B"],
     passengers: 2,
     totalPrice: "107,000원",
   };
 
-  // state에 seats 상태가 넘어오면 사용
+  // 좌석 정보: state에서 온 값이 있으면 사용
   const finalSeats = state?.seats ?? dummyReservation.seats;
+
+  // 결제 페이지 이동 함수
+  const goToPayment = () => {
+    navigate("/payment", {
+      state: {
+        ...dummyReservation,
+        seats: finalSeats,
+      },
+    });
+  };
 
   return (
     <div className="flex justify-center w-screen h-screen bg-white">
@@ -77,7 +89,12 @@ export default function ReservationSummaryPage() {
             <button className="flex-1 py-3 bg-white border-[2px] border-[#3182F6] text-[#3182F6] rounded-xl font-semibold">
               다시 선택하기
             </button>
-            <button className="flex-1 py-3 bg-[#3182F6] text-white rounded-xl font-semibold">
+
+            {/* ★ 결제하기 버튼 */}
+            <button
+              onClick={goToPayment}
+              className="flex-1 py-3 bg-[#3182F6] text-white rounded-xl font-semibold"
+            >
               결제하기
             </button>
           </div>
