@@ -147,6 +147,20 @@ export default function DateTimePage() {
                             if (step === "departure") setDepartureDate(d!);
                             else setReturnDate(d!);
                         }}
+                        filterDate={(date) => {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const target = new Date(date);
+                            target.setHours(0, 0, 0, 0);
+
+                            if (step === "departure") {
+                                return target >= today;
+                            } else {
+                                const dep = new Date(departureDate);
+                                dep.setHours(0, 0, 0, 0);
+                                return target >= dep;
+                            }
+                        }}
                         inline
                         calendarClassName="custom-calendar"
                         wrapperClassName="custom-calendar-wrapper"
@@ -165,11 +179,10 @@ export default function DateTimePage() {
                                         else setReturnHour(h);
                                     }}
                                     className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm border font-semibold
-                    ${
-                                        selected === h
+                    ${selected === h
                                             ? "bg-blue-600 text-white border-blue-600"
                                             : "bg-white text-slate-700 border-slate-300"
-                                    }
+                                        }
                   `}
                                 >
                                     {String(h).padStart(2, "0")}시
