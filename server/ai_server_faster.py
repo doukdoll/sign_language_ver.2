@@ -193,6 +193,7 @@ def execute_inference(
     count_for_log = 0
 ) -> Optional[Dict[str, Any]]:
     """추론 실행 및 결과 후처리 (천안->서울 로직 포함)"""
+    """[1. 경주, 2. 대구]면 부산으로 반환하는 로직 추가"""
 
     buffer_len = len(frame_buffer)
     if buffer_len == 0:
@@ -237,6 +238,21 @@ def execute_inference(
                     confidence = seoul_conf
                     is_overridden = True
         # =========================================================================
+
+        # =========================================================================
+        # [RULE OVERRIDE] 경주 -> 부산 보정 로직
+        # 조건: 1위가 '경주'이고, 2위가 '대구'일 때 '부산'으로 변경
+        # =========================================================================
+        if prediction == "경주":
+            second_best = result["top_k_predictions"][1]
+
+            if second_best["word"]=="대구":
+                daegu_conf = float(second_best['confidence'])
+                logger.info(f"🔄 [Override] '1위 경주, 2위 대구'({confidence:.1f}%, {daegu_conf:.1f}%) -> '부산' 교체됨 (Rule: 1위 경주, 2위 대구)")
+                prediction = "부산"
+                confidence = daegu_conf
+                is_overridden = True
+            # =========================================================================
 
         # 3. 로깅
         if count_for_log % log_interval == 0 or is_overridden:
