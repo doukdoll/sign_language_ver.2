@@ -61,7 +61,7 @@ export default function KTXSeatSelector() {
         if (selectedSeats.length > 0) {
             // 6. [데이터 전달] 기존 정보 + 좌석 정보를 모두 담아서 다음 페이지로 이동
             if (tripType=='round'){
-                navigate("/timetable", {
+                navigate("/timetable", { //왕복 첫번째
                     state: {
                         // 기존 여행 정보 유지
                         departureStation:arrivalStation,
@@ -80,7 +80,9 @@ export default function KTXSeatSelector() {
                 });
             }
 
-            else if (tripType=='round2'){
+            else if (tripType=='round2'){  //왕복 2번째
+                console.log("첫 번째 열차:", selectedTrain1)
+                console.log("두 번째 열차:", selectedTrain2);
                 navigate("/summary", {
                     state: {
                         // 기존 여행 정보 유지
@@ -106,7 +108,7 @@ export default function KTXSeatSelector() {
             }
 
             else{
-            navigate("/summary", {
+            navigate("/summary", { //편도
                 state: {
                     // 기존 여행 정보 유지
                     departureStation,
