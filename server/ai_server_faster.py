@@ -73,7 +73,7 @@ except Exception as e:
     SERVICE, VOCAB, DEVICE = None, None, None
 
 MAX_BUFFER_FRAMES = realtime_config.get('window_size', 200) if MODEL_TYPE == "onnx" else 180
-MIN_BUFFER_FRAMES = MAX_BUFFER_FRAMES // 2
+MIN_BUFFER_FRAMES = MAX_BUFFER_FRAMES // 3
 log_interval = realtime_config.get("log_interval", 30)
 
 logger.info(f"⚙️ 설정 완료: Window Size={MAX_BUFFER_FRAMES}, Stride={INFERENCE_STRIDE}, log_interval={log_interval}")
