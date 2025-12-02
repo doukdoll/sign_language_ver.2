@@ -16,8 +16,10 @@ export default function ReservationSummaryPage() {
         arrivalStation,
         departureDate,
         passengers,
-        selectedTrain,
-        seats
+        selectedTrain1,
+        selectedTrain2,
+        seats1,
+        seats2
     } = state || {};
 
     const [showPopup, setShowPopup] = useState(false);
@@ -43,7 +45,7 @@ export default function ReservationSummaryPage() {
         });
     };
 
-    const unitPrice = selectedTrain?.price || 0;
+    const unitPrice = selectedTrain1?.price || 0;
     const totalPrice = unitPrice * (passengers || 0);
 
     useEffect(() => {
@@ -83,8 +85,8 @@ export default function ReservationSummaryPage() {
 
                         <div className="text-sm text-gray-700 space-y-1 mb-4">
                             <p><span className="font-bold mr-2">날짜:</span>{formatDate(departureDate)}</p>
-                            <p><span className="font-bold mr-2">출발:</span>{formatTime(selectedTrain?.departureTime)}</p>
-                            <p><span className="font-bold mr-2">도착:</span>{formatTime(selectedTrain?.arrivalTime)}</p>
+                            <p><span className="font-bold mr-2">출발:</span>{formatTime(selectedTrain1?.departureTime)}</p>
+                            <p><span className="font-bold mr-2">도착:</span>{formatTime(selectedTrain1?.arrivalTime)}</p>
                         </div>
 
                         <hr className="my-3 border-t border-[#D5E1F2]" />
@@ -92,16 +94,16 @@ export default function ReservationSummaryPage() {
                         <div className="text-sm text-gray-700 space-y-2">
                             <p>
                                 <span className="font-bold mr-2">열차:</span>
-                                {selectedTrain?.trainName || "정보 없음"}
+                                {selectedTrain1?.trainName || "정보 없음"}
                                 <span className="text-xs text-gray-500 ml-1">
-                                    ({selectedTrain?.trainNumber})
+                                    ({selectedTrain1?.trainNumber})
                                 </span>
                             </p>
 
                             <p className="flex items-start">
                                 <span className="font-bold mr-2 shrink-0">좌석:</span>
                                 <span className="text-blue-600 font-semibold break-words">
-                                    일반실 / {seats ? seats.join(", ") : "선택 없음"}
+                                    일반실 / {seats1 ? seats1.join(", ") : "선택 없음"}
                                 </span>
                             </p>
 

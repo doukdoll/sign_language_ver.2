@@ -17,7 +17,9 @@ export default function TrainTimeTablePage() {
         departureHour,
         returnDate,
         returnHour,
-        passengers
+        passengers,
+        selectedTrain1,
+        selectedSeats1
     } = location.state || {};
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -131,21 +133,43 @@ export default function TrainTimeTablePage() {
         console.log(selectedId);
         console.log(selectedTrain)
         if (selectedTrain) {
-            navigate("/seat", {
-                state: {
-                    // 기존 정보 유지
-                    departureStation:selectedTrain.departureStation,
-                    arrivalStation: selectedTrain.arrivalStation,
-                    tripType,
-                    passengers,
-                    departureDate,
-                    departureHour,
-                    returnDate,
-                    returnHour,
-                    selectedTrain,
-                    trainId: selectedTrain.trainNumber,
-                },
-            });
+            if (tripType=='round2'){
+                navigate("/seat", {
+                    state: {
+                        // 기존 정보 유지
+                        departureStation: selectedTrain.departureStation,
+                        arrivalStation: selectedTrain.arrivalStation,
+                        tripType,
+                        passengers,
+                        departureDate,
+                        departureHour,
+                        returnDate,
+                        returnHour,
+                        selectedTrain1,
+                        selectedTrain2: selectedTrain,
+                        selectedSeats1,
+                        trainId: selectedTrain.trainNumber,
+                    },
+                });
+            }
+
+            else{
+                navigate("/seat", {
+                    state: {
+                        // 기존 정보 유지
+                        departureStation:selectedTrain.departureStation,
+                        arrivalStation: selectedTrain.arrivalStation,
+                        tripType,
+                        passengers,
+                        departureDate,
+                        departureHour,
+                        returnDate,
+                        returnHour,
+                        selectedTrain1: selectedTrain,
+                        trainId: selectedTrain.trainNumber,
+                    },
+                });
+            }
         }
     };
 
