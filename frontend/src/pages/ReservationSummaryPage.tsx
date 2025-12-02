@@ -79,14 +79,14 @@ export default function ReservationSummaryPage() {
 
                         <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                             <span className="text-blue-600">출발</span>
-                            {departureStation || "출발역"}
+                            {selectedTrain1?.departureStation || "출발역"}
                             <span className="text-gray-400">→</span>
                             <span className="text-red-500">도착</span>
-                            {arrivalStation || "도착역"}
+                            {selectedTrain1?.arrivalStation || "도착역"}
                         </h3>
 
                         <div className="text-sm text-gray-700 space-y-1 mb-4">
-                            <p><span className="font-bold mr-2">날짜:</span>{formatDate(departureDate)}</p>
+                            <p><span className="font-bold mr-2">날짜:</span>{formatDate(selectedTrain1?.departureTime)}</p>
                             <p><span className="font-bold mr-2">출발:</span>{formatTime(selectedTrain1?.departureTime)}</p>
                             <p><span className="font-bold mr-2">도착:</span>{formatTime(selectedTrain1?.arrivalTime)}</p>
                         </div>

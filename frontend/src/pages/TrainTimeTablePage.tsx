@@ -19,7 +19,7 @@ export default function TrainTimeTablePage() {
         returnHour,
         passengers,
         selectedTrain1,
-        selectedSeats1
+        Seats1
     } = location.state || {};
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -131,7 +131,9 @@ export default function TrainTimeTablePage() {
         );
 
         if (selectedTrain) {
-            if (tripType=='round2'){
+            if (tripType=='round2'){ //왕복처리
+                console.log("첫 번째 열차:", selectedTrain1)
+                console.log("두 번째 열차:", selectedTrain);
                 navigate("/seat", {
                     state: {
                         // 기존 정보 유지
@@ -145,7 +147,7 @@ export default function TrainTimeTablePage() {
                         returnHour,
                         selectedTrain1,
                         selectedTrain2: selectedTrain,
-                        selectedSeats1,
+                        Seats1,
                         trainId: selectedTrain.trainNumber,
                     },
                 });
