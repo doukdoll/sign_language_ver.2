@@ -148,15 +148,20 @@ export default function DateTimePage() {
                         filterDate={(date) => {
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
+
+                            //다음 달까지만 표시하기위한 변수
+                            const nextMonth = new Date(today);
+                            nextMonth.setMonth(nextMonth.getMonth() + 1);
+
                             const target = new Date(date);
                             target.setHours(0, 0, 0, 0);
 
                             if (step === "departure") {
-                                return target >= today;
+                                return target >= today && target <= nextMonth;
                             } else {
                                 const dep = new Date(departureDate);
                                 dep.setHours(0, 0, 0, 0);
-                                return target >= dep;
+                                return target >= dep && target <= nextMonth;
                             }
                         }}
                         inline

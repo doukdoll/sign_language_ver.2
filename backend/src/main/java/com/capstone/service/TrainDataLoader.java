@@ -11,16 +11,12 @@ import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.format.TextStyle;
+import java.util.*;
 
 @Profile("!test") // 테스트 환경에서는 실행되지 않도록 설정
 @Component
@@ -96,6 +92,9 @@ public class TrainDataLoader {
                         continue;
                     }
 
+                    LocalDate startDate = LocalDate.now();                       // 시작일: 오늘
+                    LocalDate endDate = startDate.plusMonths(1);     // 종료일: 한 달 뒤
+
                     // 가능한 모든 출발-도착 조합 생성 및 저장
                     for (int i = 0; i < stationOrder.size(); i++) {
                         String departureStation = stationOrder.get(i);
@@ -107,27 +106,36 @@ public class TrainDataLoader {
                             LocalTime arrTime = stationTimes.get(arrivalStation);
                             if (arrTime == null) continue; // 도착 시간이 없는 역은 건너뜀
 
-                            // 임시 날짜 설정 (오늘)
-                            LocalDate baseDate = LocalDate.now();
 
-                            LocalDateTime departureDateTime = LocalDateTime.of(baseDate, depTime);
-                            LocalDateTime arrivalDateTime = LocalDateTime.of(baseDate, arrTime);
+                            // ** 날짜 루프 시작 **
+                            // startDate부터 endDate까지 하루씩 증가
+                            for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
 
-                            // 자정(00:xx)을 넘어가는 시간 처리 (예: 23:50 출발 -> 00:30 도착)
-                            if (arrivalDateTime.isBefore(departureDateTime)) {
-                                arrivalDateTime = arrivalDateTime.plusDays(1);
+                                // 1. 해당 날짜(요일)에 열차가 운행하는지 체크
+                                if (!isRunningOnDate(operatingDays, date)) {
+                                    continue; // 운행하지 않는 날이면 스킵
+                                }
+
+                                LocalDateTime departureDateTime = LocalDateTime.of(date, depTime);
+                                LocalDateTime arrivalDateTime = LocalDateTime.of(date, arrTime);
+
+                                // 2. 자정 넘김 처리 (도착 시간이 출발 시간보다 빠르면 다음날 도착으로 간주)
+                                if (arrivalDateTime.isBefore(departureDateTime)) {
+                                    arrivalDateTime = arrivalDateTime.plusDays(1);
+                                }
+
+                                schedulesToSave.add(TrainSchedule.builder()
+                                        .trainNumber(trainNumber)
+                                        .trainName(trainName)
+                                        .departureStation(departureStation)
+                                        .arrivalStation(arrivalStation)
+                                        .departureTime(departureDateTime)
+                                        .arrivalTime(arrivalDateTime)
+                                        .operatingDays(operatingDays)
+                                        .price(30000)
+                                        .build());
                             }
-
-                            schedulesToSave.add(TrainSchedule.builder()
-                                    .trainNumber(trainNumber)
-                                    .trainName(trainName)
-                                    .departureStation(departureStation)
-                                    .arrivalStation(arrivalStation)
-                                    .departureTime(departureDateTime)
-                                    .arrivalTime(arrivalDateTime)
-                                    .operatingDays(operatingDays)
-                                    .price(30000) // 임시 가격 설정 (실제 로직 필요)
-                                    .build());
+                            // ** 날짜 루프 끝 **
                         }
                     }
                 }
@@ -181,5 +189,20 @@ public class TrainDataLoader {
             return "";
         }
         return line[index].trim();
+    }
+
+    // [추가] 요일 체크 헬퍼 메서드
+    // "매일", "월화수", "토일" 등의 문자열과 현재 날짜의 요일을 비교
+    private boolean isRunningOnDate(String operatingDays, LocalDate date) {
+        if (operatingDays.equals("매일")) {
+            return true;
+        }
+
+        // 현재 날짜의 요일을 한국어 1글자로 변환 (예: MONDAY -> "월")
+        String dayOfWeekArg = date.getDayOfWeek().getDisplayName(TextStyle.NARROW, Locale.KOREAN);
+
+        // CSV의 운행요일 문자열에 해당 요일이 포함되어 있는지 확인
+        // 예: operatingDays가 "월수금"이고 오늘이 "수"요일이면 true
+        return operatingDays.contains(dayOfWeekArg);
     }
 }
