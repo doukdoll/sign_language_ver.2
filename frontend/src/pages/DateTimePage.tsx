@@ -135,9 +135,7 @@ export default function DateTimePage() {
                             : "돌아오는 날짜와 시간을 선택해주세요."}
                     </p>
 
-                    {/* (선택 사항) 화면에 인원수나 정보를 표시하고 싶다면 아래 주석 해제 */}
-                    {/* <p className="text-sm text-gray-500 mb-2">탑승 인원: {passengers}명</p> */}
-
+                   
                     {/* 캘린더 UI */}
                     <DatePicker
                         locale={ko}
