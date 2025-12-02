@@ -4,8 +4,6 @@ import com.capstone.dto.TrainInfoDto;
 import com.capstone.repository.TrainScheduleRepository;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -36,41 +34,48 @@ public class KorailService {
         final LocalDateTime effectiveDepartureFrom = (departureFrom == null) ? LocalDateTime.now() : departureFrom;
         logger.debug("Effective Departure From: {}", effectiveDepartureFrom);
 
+        //하루 뒤 자정 변수
+        LocalDateTime nextDayMidnight = effectiveDepartureFrom
+                .toLocalDate() // 연-월-일만 추출 (시간 제거)
+                .plusDays(1)   // 하루 더하기
+                .atStartOfDay(); // 00:00:00으로 설정
+
         List<TrainSchedule> filteredSchedules = new ArrayList<>();
 
         if (departure != null && !departure.isBlank() && destination != null && !destination.isBlank()) {
             if ("대구".equalsIgnoreCase(destination.trim())) {
                 List<String> daeguStations = Arrays.asList("동대구", "서대구");
-                filteredSchedules = trainScheduleRepository.findByDepartureStationAndArrivalStationInAndDepartureTimeAfterOrderByDepartureTimeAsc(
-                        departure.trim(), daeguStations, effectiveDepartureFrom
+                filteredSchedules = trainScheduleRepository.findByDepartureStationAndArrivalStationInAndDepartureTimeGreaterThanEqualAndDepartureTimeLessThanOrderByDepartureTimeAsc(
+                        departure.trim(), daeguStations, effectiveDepartureFrom, nextDayMidnight
                 );
             }
 
             else if("대구".equalsIgnoreCase(departure.trim())){
                 List<String> daeguStations = Arrays.asList("동대구", "서대구");
-                filteredSchedules = trainScheduleRepository.findByDepartureStationInAndArrivalStationAndDepartureTimeAfterOrderByDepartureTimeAsc(
-                        daeguStations, destination.trim() ,effectiveDepartureFrom
+                filteredSchedules = trainScheduleRepository.findByDepartureStationInAndArrivalStationAndDepartureTimeGreaterThanEqualAndDepartureTimeLessThanOrderByDepartureTimeAsc(
+                        daeguStations, destination.trim() ,effectiveDepartureFrom, nextDayMidnight
                 );
             }
 
             else {
-                filteredSchedules = trainScheduleRepository.findByDepartureStationAndArrivalStationAndDepartureTimeAfterOrderByDepartureTimeAsc(
-                        departure.trim(), destination.trim(), effectiveDepartureFrom
+                filteredSchedules = trainScheduleRepository.findByDepartureStationAndArrivalStationAndDepartureTimeGreaterThanEqualAndDepartureTimeLessThanOrderByDepartureTimeAsc(
+                        departure.trim(), destination.trim(), effectiveDepartureFrom, nextDayMidnight
                 );
             }
         } else if (departure != null && !departure.isBlank()) {
             // 출발지만 있을 경우, 해당 출발지의 모든 도착지에 대한 시간표를 필터링
-            filteredSchedules = trainScheduleRepository.findByDepartureStationAndDepartureTimeAfterOrderByDepartureTimeAsc(
-                    departure.trim(), effectiveDepartureFrom
+            filteredSchedules = trainScheduleRepository.findByDepartureStationAndDepartureTimeGreaterThanEqualAndDepartureTimeLessThanOrderByDepartureTimeAsc(
+                    departure.trim(), effectiveDepartureFrom, nextDayMidnight
             );
         } else if (destination != null && !destination.isBlank()) {
             // 목적지만 있을 경우, 해당 목적지의 모든 출발지에 대한 시간표를 필터링
-            filteredSchedules = trainScheduleRepository.findByArrivalStationAndDepartureTimeAfterOrderByDepartureTimeAsc(
-                    destination.trim(), effectiveDepartureFrom
+            filteredSchedules = trainScheduleRepository.findByArrivalStationAndDepartureTimeGreaterThanEqualAndDepartureTimeLessThanOrderByDepartureTimeAsc(
+                    destination.trim(), effectiveDepartureFrom, nextDayMidnight
             );
         } else {
             // 출발지/목적지 모두 없을 경우
-            filteredSchedules = trainScheduleRepository.findByDepartureTimeAfterOrderByDepartureTimeAsc(effectiveDepartureFrom);
+            filteredSchedules = trainScheduleRepository.findByDepartureTimeGreaterThanEqualAndDepartureTimeLessThanOrderByDepartureTimeAsc(
+                    effectiveDepartureFrom, nextDayMidnight);
         }
 
         // departureTo 필터링 추가
