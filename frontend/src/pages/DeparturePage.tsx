@@ -47,7 +47,7 @@ export default function DeparturePage() {
     };
 
     return (
-        <div className="flex items-center justify-center bg-gray-100">
+        <div className="flex items-center justify-center w-screen h-screen bg-white to-gray-100">
             <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-2xl flex flex-col overflow-hidden">
                 <Header title="출발역 선택" />
                 <div className="mt-6 px-10">

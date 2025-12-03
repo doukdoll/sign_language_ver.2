@@ -32,7 +32,7 @@ export default function TripTypePage() {
     };
 
     return (
-        <div className="flex justify-center w-screen h-screen bg-white to-gray-100">
+        <div className="flex items-center justify-center w-screen h-screen bg-white to-gray-100">
             <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-xl flex flex-col">
 
                 <Header title="여행 종류 선택" />
