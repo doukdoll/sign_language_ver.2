@@ -18,7 +18,9 @@ export default function KTXSeatSelector() {
         returnDate,
         returnHour,
         passengers,      // 가장 중요: 탑승 인원 수
-        selectedTrain    // 가장 중요: 기차 정보
+        selectedTrain1,    // 가장 중요: 기차 정보
+        selectedTrain2,
+        seats1
     } = location.state || {};
 
     // 초기 좌석 상태 고정 (기존 코드 유지)
@@ -39,11 +41,11 @@ export default function KTXSeatSelector() {
 
     // 데이터 잘 들어왔는지 확인용 로그
     useEffect(() => {
-        console.log("📝 SeatPage 수신 데이터:", { passengers, selectedTrain });
+        console.log("📝 SeatPage 수신 데이터:", { passengers, selectedTrain1 });
         if (!passengers) {
             console.warn("⚠️ 인원수 정보가 없습니다. (테스트가 아니라면 오류 상황)");
         }
-    }, [passengers, selectedTrain]);
+    }, [passengers, selectedTrain1]);
 
 
     // 좌석 선택 완료 핸들러
@@ -58,7 +60,55 @@ export default function KTXSeatSelector() {
 
         if (selectedSeats.length > 0) {
             // 6. [데이터 전달] 기존 정보 + 좌석 정보를 모두 담아서 다음 페이지로 이동
-            navigate("/summary", {
+            if (tripType=='round'){
+                navigate("/timetable", {
+                    state: {
+                        // 기존 여행 정보 유지
+                        departureStation:arrivalStation,
+                        arrivalStation:departureStation,
+                        tripType:'round2',
+                        departureDate:returnDate,
+                        departureHour:returnHour,
+                        returnDate,
+                        returnHour,
+                        passengers,
+                        selectedTrain1,
+
+                        // 새로 선택한 좌석 정보
+                        seats1: selectedSeats
+                    }
+                });
+            }
+
+            else if (tripType=='round2'){  //왕복 2번째
+                console.log("첫 번째 열차:", selectedTrain1)
+                console.log("두 번째 열차:", selectedTrain2);
+                navigate("/summary", {
+                    state: {
+                        // 기존 여행 정보 유지
+                        departureStation,
+                        arrivalStation,
+                        tripType,
+                        departureDate,
+                        departureHour,
+                        returnDate,
+                        returnHour,
+                        passengers,
+                        selectedTrain1,
+                        selectedTrain2,
+                        seats1,
+
+                        // 새로 선택한 좌석 정보
+                        seats2: selectedSeats,
+
+                        // (선택 사항) 총 결제 금액 계산해서 넘기기
+                        totalPrice: ((selectedTrain1?.price + selectedTrain2?.price) || 0) * passengers
+                    }
+                });
+            }
+
+            else{
+                navigate("/summary", { //편도
                 state: {
                     // 기존 여행 정보 유지
                     departureStation,
@@ -69,20 +119,21 @@ export default function KTXSeatSelector() {
                     returnDate,
                     returnHour,
                     passengers,
-                    selectedTrain,
+                    selectedTrain1,
 
                     // 새로 선택한 좌석 정보
-                    seats: selectedSeats,
+                    seats1: selectedSeats,
 
                     // (선택 사항) 총 결제 금액 계산해서 넘기기
-                    totalPrice: (selectedTrain?.price || 0) * passengers
+                    totalPrice: (selectedTrain1?.price || 0) * passengers
                 }
             });
+          }
         }
     };
 
     return (
-        <div className="flex justify-center w-screen h-screen bg-white">
+        <div className="flex items-center justify-center w-screen h-screen bg-white to-gray-100">
             <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-xl flex flex-col">
 
                 {/* 상단 헤더 */}

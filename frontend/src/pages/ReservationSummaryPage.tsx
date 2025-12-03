@@ -1,3 +1,4 @@
+// src/pages/ReservationSummaryPage.tsx
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
@@ -16,8 +17,10 @@ export default function ReservationSummaryPage() {
         arrivalStation,
         departureDate,
         passengers,
-        selectedTrain,
-        seats
+        selectedTrain1,
+        selectedTrain2,
+        seats1,
+        seats2
     } = state || {};
 
     const [showPopup, setShowPopup] = useState(false);
@@ -43,9 +46,10 @@ export default function ReservationSummaryPage() {
         });
     };
 
-    const unitPrice = selectedTrain?.price || 0;
+    const unitPrice = selectedTrain1?.price || 0;
     const totalPrice = unitPrice * (passengers || 0);
 
+    // 예매 정보 없으면 홈으로 보냄
     useEffect(() => {
         if (!state) {
             alert("예매 정보가 없습니다. 처음부터 다시 진행해주세요.");
@@ -58,7 +62,7 @@ export default function ReservationSummaryPage() {
     };
 
     return (
-        <div className="flex justify-center w-screen h-screen bg-white">
+        <div className="flex items-center justify-center w-screen h-screen bg-white to-gray-100">
             <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-xl flex flex-col">
 
                 <Header title="예매내역 확인" />
@@ -75,16 +79,16 @@ export default function ReservationSummaryPage() {
 
                         <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                             <span className="text-blue-600">출발</span>
-                            {departureStation || "출발역"}
+                            {selectedTrain1?.departureStation || "출발역"}
                             <span className="text-gray-400">→</span>
                             <span className="text-red-500">도착</span>
-                            {arrivalStation || "도착역"}
+                            {selectedTrain1?.arrivalStation || "도착역"}
                         </h3>
 
                         <div className="text-sm text-gray-700 space-y-1 mb-4">
-                            <p><span className="font-bold mr-2">날짜:</span>{formatDate(departureDate)}</p>
-                            <p><span className="font-bold mr-2">출발:</span>{formatTime(selectedTrain?.departureTime)}</p>
-                            <p><span className="font-bold mr-2">도착:</span>{formatTime(selectedTrain?.arrivalTime)}</p>
+                            <p><span className="font-bold mr-2">날짜:</span>{formatDate(selectedTrain1?.departureTime)}</p>
+                            <p><span className="font-bold mr-2">출발:</span>{formatTime(selectedTrain1?.departureTime)}</p>
+                            <p><span className="font-bold mr-2">도착:</span>{formatTime(selectedTrain1?.arrivalTime)}</p>
                         </div>
 
                         <hr className="my-3 border-t border-[#D5E1F2]" />
@@ -92,16 +96,16 @@ export default function ReservationSummaryPage() {
                         <div className="text-sm text-gray-700 space-y-2">
                             <p>
                                 <span className="font-bold mr-2">열차:</span>
-                                {selectedTrain?.trainName || "정보 없음"}
+                                {selectedTrain1?.trainName || "정보 없음"}
                                 <span className="text-xs text-gray-500 ml-1">
-                                    ({selectedTrain?.trainNumber})
+                                    ({selectedTrain1?.trainNumber})
                                 </span>
                             </p>
 
                             <p className="flex items-start">
                                 <span className="font-bold mr-2 shrink-0">좌석:</span>
                                 <span className="text-blue-600 font-semibold break-words">
-                                    일반실 / {seats ? seats.join(", ") : "선택 없음"}
+                                    일반실 / {seats1 ? seats1.join(", ") : "선택 없음"}
                                 </span>
                             </p>
 
@@ -112,10 +116,13 @@ export default function ReservationSummaryPage() {
 
                         <div className="flex justify-between items-center mt-2">
                             <span className="font-semibold text-gray-800 text-base">총 결제 금액</span>
-                            <span className="font-bold text-2xl text-[#3182F6]">{totalPrice.toLocaleString()}원</span>
+                            <span className="font-bold text-2xl text-[#3182F6]">
+                                {totalPrice.toLocaleString()}원
+                            </span>
                         </div>
                     </div>
 
+                    {/* 버튼 영역 */}
                     <div className="flex gap-3 mt-10">
                         <button
                             onClick={handleRetry}
@@ -123,6 +130,7 @@ export default function ReservationSummaryPage() {
                         >
                             다시 선택하기
                         </button>
+
                         <button
                             onClick={() => setShowPopup(true)}
                             className="flex-1 py-4 bg-[#3182F6] text-white rounded-xl font-bold hover:bg-blue-600 shadow-lg transition-colors"
@@ -137,12 +145,19 @@ export default function ReservationSummaryPage() {
             {showPopup && (
                 <>
                     <Dimmed onClick={() => setShowPopup(false)} />
+
                     <PaymentPopup
                         totalPrice={totalPrice}
                         onSelect={(method) => {
                             setShowPopup(false);
-                            navigate("/payment-process", {
-                                state: { ...state, paymentMethod: method, totalPrice }
+
+                           
+                            navigate("/payment", {
+                                state: {
+                                    ...state,
+                                    paymentMethod: method,
+                                    totalPrice
+                                }
                             });
                         }}
                         onClose={() => setShowPopup(false)}

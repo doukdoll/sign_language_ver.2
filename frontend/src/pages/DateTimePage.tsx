@@ -122,7 +122,7 @@ export default function DateTimePage() {
 
 
     return (
-        <div className="flex justify-center w-screen h-screen bg-white">
+        <div className="flex items-center justify-center w-screen h-screen bg-white to-gray-100">
             <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-xl flex flex-col">
 
                 <Header title="날짜/시간 선택" />

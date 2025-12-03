@@ -17,7 +17,9 @@ export default function TrainTimeTablePage() {
         departureHour,
         returnDate,
         returnHour,
-        passengers
+        passengers,
+        selectedTrain1,
+        Seats1
     } = location.state || {};
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -131,26 +133,50 @@ export default function TrainTimeTablePage() {
         console.log(selectedId);
         console.log(selectedTrain)
         if (selectedTrain) {
-            navigate("/seat", {
-                state: {
-                    // 기존 정보 유지
-                    departureStation:selectedTrain.departureStation,
-                    arrivalStation: selectedTrain.arrivalStation,
-                    tripType,
-                    passengers,
-                    departureDate,
-                    departureHour,
-                    returnDate,
-                    returnHour,
-                    selectedTrain,
-                    trainId: selectedTrain.trainNumber,
-                },
-            });
+            if (tripType=='round2'){ //왕복처리
+                console.log("첫 번째 열차:", selectedTrain1)
+                console.log("두 번째 열차:", selectedTrain);
+                navigate("/seat", {
+                    state: {
+                        // 기존 정보 유지
+                        departureStation: selectedTrain.departureStation,
+                        arrivalStation: selectedTrain.arrivalStation,
+                        tripType,
+                        passengers,
+                        departureDate,
+                        departureHour,
+                        returnDate,
+                        returnHour,
+                        selectedTrain1,
+                        selectedTrain2: selectedTrain,
+                        Seats1,
+                        trainId: selectedTrain.trainNumber,
+                    },
+                });
+            }
+
+            else{
+                navigate("/seat", {
+                    state: {
+                        // 기존 정보 유지
+                        departureStation:selectedTrain.departureStation,
+                        arrivalStation: selectedTrain.arrivalStation,
+                        tripType,
+                        passengers,
+                        departureDate,
+                        departureHour,
+                        returnDate,
+                        returnHour,
+                        selectedTrain1: selectedTrain,
+                        trainId: selectedTrain.trainNumber,
+                    },
+                });
+            }
         }
     };
 
     return (
-        <div className="flex justify-center w-screen h-screen bg-white">
+        <div className="flex items-center justify-center w-screen h-screen bg-white to-gray-100">
             <div className="w-[450px] h-[900px] bg-gradient-to-b from-blue-50 to-white shadow-xl flex flex-col">
 
                 <Header title="기차 시간표 조회" />

@@ -34,7 +34,7 @@ export default function PaymentPopup({ totalPrice, onSelect, onClose }: PaymentP
           </button>
 
           {/* 간편결제 */}
-          <button onClick={() => onSelect("nfc")} className="text-center">
+          <button onClick={() => onSelect("pay")} className="text-center">
             <div className="w-28 h-35 bg-gray-100 rounded-xl  flex items-center justify-center">
               <img src={nfcIcon} className="w-16" />
             </div>
