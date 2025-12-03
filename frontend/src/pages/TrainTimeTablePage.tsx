@@ -122,14 +122,16 @@ export default function TrainTimeTablePage() {
     ]);
 
     const handleSelectTrain = (id: string) => {
+        console.log(id);
         setSelectedId(id);
     };
 
     const handleNext = () => {
-        const selectedTrain = trainSchedules.find(
-            (t) => t.trainNumber + t.departureTime === selectedId
-        );
-
+        // 2. [수정] 다음 페이지로 모든 데이터 전달
+        // 선택된 기차 객체를 찾음
+        const selectedTrain = trainSchedules.find(t => (t.trainNumber + t.departureTime + t.arrivalTime) === selectedId);
+        console.log(selectedId);
+        console.log(selectedTrain)
         if (selectedTrain) {
             if (tripType=='round2'){ //왕복처리
                 console.log("첫 번째 열차:", selectedTrain1)
@@ -216,8 +218,7 @@ export default function TrainTimeTablePage() {
                         <div className="bg-white rounded-xl shadow-inner overflow-y-scroll no-scrollbar h-full p-2 pb-20">
 
                             {trainSchedules.map((train: any) => {
-                                const uniqueId = train.trainNumber + train.departureTime;
-
+                                const uniqueId = train.trainNumber + train.departureTime + train.arrivalTime;
                                 return (
                                     <div key={uniqueId} className="mb-1">  
                                         <TrainRow
