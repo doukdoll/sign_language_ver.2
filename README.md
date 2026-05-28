@@ -58,42 +58,45 @@ C:\sign_language_ver.2\
 
 ## 🚀 실행 방법 (Getting Started)
 
-프로젝트를 로컬 환경에서 실행하기 위해 각 디렉토리의 지침을 따라주세요.
+본 프로젝트는 **Docker Compose**를 사용하여 모든 서버(프론트엔드, 백엔드, AI 서버)를 한 번에 실행하는 것을 권장합니다.
 
-### 1. Backend (Spring Boot)
+### 1. Docker Compose로 실행 (권장)
 
+프로젝트 최상위 디렉토리에서 다음 명령어를 입력하세요:
+
+```bash
+# 전체 서비스 빌드 및 실행
+docker-compose up --build
+```
+- **프론트엔드:** `http://localhost`
+- **백엔드 API:** `http://localhost:8080/api`
+- **AI 서버:** `http://localhost:5001`
+- **Swagger 문서:** `http://localhost:8080/api/swagger-ui/index.html`
+
+---
+
+### 2. 개별 서비스 수동 실행 (개발용)
+
+Docker 없이 각 모듈을 직접 실행하려면 아래 단계를 따르세요.
+
+#### Backend (Spring Boot)
 ```bash
 cd backend
-# 의존성 설치 및 빌드
-./gradlew clean build --refresh-dependencies
-# 서버 실행 (H2 메모리 DB에 CSV 데이터가 자동 적재됩니다)
 ./gradlew bootRun
 ```
-- API 서버 URL: `http://localhost:8080/api`
-- Swagger 문서: `http://localhost:8080/api/swagger-ui/index.html`
 
-### 2. Frontend (React)
-
+#### Frontend (React)
 ```bash
 cd frontend
-# 의존성 설치
-npm install
-# 개발 서버 실행
-npm run dev
+npm install && npm run dev
 ```
-- 프론트엔드 접속: 터미널에 표시된 `http://localhost:5173/` 등의 주소로 접속
 
-### 3. AI Server (Python)
-
+#### AI Server (Python)
 ```bash
 cd server
-# 패키지 설치
 pip install -r requirements.txt
-# 실시간 인식 서버 실행
 python app.py
 ```
-- 모델 및 설정 파일 경로: `model_files/config.yaml`, `model_files/*.ckpt`
-- macOS 사용 시 카메라 권한 확인 필수
 
 ---
 
