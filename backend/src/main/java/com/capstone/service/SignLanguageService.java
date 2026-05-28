@@ -25,8 +25,9 @@ public class SignLanguageService {
     private static final Logger logger = LoggerFactory.getLogger(SignLanguageService.class);
     private RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    // 포트 5001번 확인 (파이썬 서버와 일치해야 함)
-    private final String flaskUrl = "http://localhost:5001/predict_keypoints";
+    
+    @org.springframework.beans.factory.annotation.Value("${ai-server.http-url:http://localhost:5001/predict_keypoints}")
+    private String flaskUrl;
 
     public SignLanguageService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;

@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  ai-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    # AI 서버가 GPU를 사용해야 한다면 아래 주석을 해제하세요. (Nvidia Docker Toolkit 필요)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # 컨테이너 환경에서는 localhost 대신 ai-server라는 서비스 이름을 통해 통신합니다.
+      - AI-SERVER_WS-URL=ws://ai-server:5001/ws/predict
+      - AI-SERVER_HTTP-URL=http://ai-server:5001/predict_keypoints
+    depends_on:
+      - ai-server
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

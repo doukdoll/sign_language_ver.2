@@ -15,11 +15,11 @@ public class AiConnectionConfig {
 
     private final InferenceClientHandler inferenceClientHandler;
 
+    @org.springframework.beans.factory.annotation.Value("${ai-server.ws-url:ws://localhost:5001/ws/predict}")
+    private String aiServerUrl;
+
     @Bean
     public WebSocketConnectionManager wsConnectionManager() {
-        // 1. Flask 주소 (ws://IP:PORT/경로)
-        String aiServerUrl = "ws://localhost:5001/ws/predict";
-
         // 2. StandardWebSocketClient: Spring이 클라이언트가 되게 해주는 객체
         StandardWebSocketClient client = new StandardWebSocketClient();
 
