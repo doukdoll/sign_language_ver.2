@@ -103,44 +103,16 @@ HTTP 요청은 한 프레임을 전처리한 뒤 마지막 프레임을 복제�
 
 ### WebSocket 요청
 
-다음 구현에서 사용할 메시지 기준은 [WebSocket 규약 v1](../docs/RECOGNITION_PROTOCOL.md)입니다. 아래 내용은 현재 구현을 설명합니다.
+[WebSocket 규약 v1](../docs/RECOGNITION_PROTOCOL.md)을 사용합니다. 연결 주소는 ws://localhost:5001/ws/predict입니다.
 
-연결 주소:
+- START/RESET/END에 명시적인 확인 응답을 반환합니다.
+- 하나의 BE 연결에서도 sessionId별 버퍼·revision·frameIndex·인식 대상을 분리합니다.
+- 모든 세션 응답에는 ID·revision이 포함되며, DEPARTURE/ARRIVAL에 따라 도시 필드가 달라집니다.
+- 프레임 입력은 137 × 3 [x, y, confidence]입니다. 결측점은 [null, null, 0]을 사용합니다.
+- 유휴 만료는 realtime.session_idle_timeout(기본 120초)로 설정합니다.
+- 기존 128프레임 버퍼와 5프레임 추론 간격, 모델 내부 180프레임 padding 정책은 유지합니다.
 
-```text
-ws://localhost:5001/ws/predict
-```
-
-세션 시작:
-
-```json
-{
-  "type": "START_SESSION",
-  "sessionId": "session-id",
-  "recognitionTarget": "DEPARTURE"
-}
-```
-
-서버는 버퍼를 초기화하고 다음 메시지를 반환합니다.
-
-```json
-{"status": "connected"}
-```
-
-키포인트 프레임:
-
-```json
-{
-  "type": "KEYPOINT_FRAME",
-  "sessionId": "session-id",
-  "frameIndex": 0,
-  "timestamp": 0,
-  "recognitionTarget": "DEPARTURE",
-  "keypoints": [[0.0, 0.0]]
-}
-```
-
-버퍼가 128프레임에 도달하면 5프레임 간격으로 추론합니다.
+모델 없이 실행하는 세션 회귀 테스트: `python -m unittest tests.test_sessions -v`
 
 ## 키포인트 전처리
 
@@ -224,9 +196,7 @@ python -m tests.test_realtime_inference --realtime-only
 
 ## 현재 제한 사항
 
-- WebSocket 추론 응답에 요청의 `sessionId`가 포함되지 않습니다. Spring 백엔드 중계를 사용하려면 응답에 세션 ID를 다시 넣어야 합니다.
-- `recognitionTarget`을 수신하지만 결과 필드를 출발역·도착역으로 분기하지 않습니다.
 - 서비스가 ONNX 모델 로드에 실패하면 정상 요청을 처리할 수 없습니다.
 - HTTP 추론은 단일 프레임 반복 padding을 사용하므로 동작 기반 수어 분류 정확도를 대표하지 않습니다.
-- WebSocket 연결별 버퍼는 관리하지만 인증, 메시지 크기 제한, rate limiting은 없습니다.
+- WebSocket 연결·세션별 버퍼는 관리하지만 인증, 메시지 크기 제한, rate limiting은 없습니다.
 - `ai_server_faster.py`와 `ai_server_add_log.py`는 별도 실험 파일이며 기본 Docker 실행 대상이 아닙니다.

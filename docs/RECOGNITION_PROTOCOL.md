@@ -1,8 +1,8 @@
 # 실시간 수어 인식 WebSocket 규약 v1
 
-상태: AI WebSocket에 v1 세션 처리 적용, FE·BE 연동 대기 (2026-09-17).
+상태: FE·BE·AI에 v1 세션 처리 적용, 실제 카메라·ONNX 통합 검증 대기 (2026-09-17).
 
-이 문서는 FE·BE·AI가 함께 구현할 공통 규약이다. AI의 `/ws/predict`는 v1을 요구하지만 현재 FE·BE는 기존 메시지와 DTO를 사용하므로 전체 경로는 아직 호환되지 않는다. FE·BE 적용 전 이 브랜치를 통합 배포하지 않는다. HTTP `/predict_keypoints`는 이번 규약의 대상이 아니다.
+이 문서는 FE·BE·AI의 공통 규약이다. 세 구성 요소를 함께 적용해야 하며 이전 버전 메시지와는 호환되지 않는다. HTTP `/predict_keypoints`는 이번 규약의 대상이 아니다.
 
 ## 1. 연결과 세션 소유권
 
@@ -208,22 +208,27 @@ BE가 FE의 잘못된 JSON을 처리할 때는 실제 연결 ID로 오류를 돌
 - BE↔AI 연결이 끊어지면 BE는 해당 연결의 세션 매핑을 비우고 각 FE에 `AI_UNAVAILABLE`을 전달한 뒤 FE 연결을 닫는다. 재연결은 새 ID와 revision 0으로 시작한다.
 - 유휴 만료 기본값은 120초이며 설정 가능하게 구현한다. 마지막으로 수락한 요청의 서버 단조 시각을 기준으로 측정한다. 손 필터로 프레임 전송이 끊길 수 있으므로 만료를 FE에 명시적으로 알린다.
 - AI는 만료 시 `SESSION_EXPIRED`를 보내고 상태를 삭제한다. BE는 소유 FE에 전달하고 매핑과 FE 연결을 정리한다.
-- 다음 구현에서 검증할 사례: A/B 교차 프레임의 버퍼 격리, A 리셋 중 B 유지, 이전 revision 결과 폐기, ID 위조 거절, 대상별 필드 매핑, 잘못된 입력 후 상태 유지, FE 단절·AI 단절·유휴 만료 시 정리.
+- 회귀 검증 대상: A/B 교차 프레임의 버퍼 격리, A 리셋 중 B 유지, 이전 revision 결과 폐기, ID 위조 거절, 대상별 필드 매핑, 잘못된 입력 후 상태 유지, FE 단절·AI 단절·유휴 만료 시 정리.
 
-## 6. 현재 코드와의 차이 및 적용 순서
+## 6. 구현 위치와 검증
 
 AI 세션 상태는 `server/realtime/sessions.py`에서 연결별로 관리한다. `ai_server.py`는 모델과 전처리 함수를 연결한다. 수신 루프에서 메시지 처리는 순차 실행되며, 유휴 만료는 1초 간격으로 확인한다(동기 추론 중에는 추론 완료 후 확인). 비동기 worker를 도입할 경우 완료 시 revision 재검증이 추가로 필요하다.
 
 모델 설치 없이 실행 가능한 회귀 테스트: `server` 디렉터리에서 `python -m unittest tests.test_sessions -v`. 실제 ONNX 품질 및 FE↔BE↔AI 통합 테스트는 별도 검증 대상이다.
 
-| 현재 코드 | 적용할 변경 |
+| 영역 | 현재 구현 |
 | --- | --- |
-| FE가 sessionId를 임의 생성 | BE의 SESSION_STARTED에서 부여받음 |
-| START/FRAME만 처리 | RESET/END와 명시적 ACK 추가 |
-| AI 연결마다 버퍼 하나였음 | 적용 완료: 연결 내부에서 sessionId별 상태 분리 |
-| AI 결과에 ID가 없었음 | 적용 완료: 모든 세션 응답에 ID·revision 포함 |
-| BE 응답 DTO에 도시 필드만 존재 | ACK/RESULT/ERROR별 필드를 보존하는 WS 전용 메시지 정의 |
-| FE target 전달 누락, AI는 출발지 필드만 채움 | 전 구간 대상 전달·검증·결과 분기 |
-| FE 재시도는 로컬 카운터만 초기화 | RESET ACK 이후 새 revision으로 전송 |
+| FE 세션 상태 | recognitionSession.ts에서 ACK·revision·결과 순서 검증 |
+| FE 전송 | useKeypointStreaming에서 ACK 제한 시간·재접속·END 관리 |
+| BE 요청 | RecognitionMessage로 REST DTO와 분리한 WS envelope 검증 |
+| BE 중계 | InferenceClientHandler에서 소유권·라우팅·직렬화·정리 |
+| BE 재접속 | AiConnectionConfig에서 기본 5초 간격 재시도 |
+| AI 세션 | sessions.py에서 연결 내부 sessionId별 상태 분리 |
 
-FE·BE·AI를 함께 적용하고 통합 테스트를 통과한 뒤 v1 지원으로 표시한다. 미구현 상태에서는 `protocolVersion: 1`을 보낸다고 호환되지 않는다. 단계적으로 수정하더라도 기존 REST DTO를 WS 변경으로 깨뜨리지 않도록 WS 전용 타입을 둔다.
+회귀 테스트 명령:
+
+- FE: `cd frontend && npm test` (Node.js 22.6+)
+- BE: `cd backend && gradle test` (Java 17, Gradle 8.14.4; 현재 저장소에는 wrapper JAR가 없어 별도 Gradle 설치 필요)
+- AI: `cd server && python -m unittest tests.test_sessions -v`
+
+BE의 WebSocketRelayIntegrationTest는 실제 로컬 WebSocket과 모의 AI를 사용한다. 이 테스트와 단위 테스트는 실제 카메라·Python 서버·ONNX를 포함한 전체 시스템 검증을 대신하지 않는다. 통합 실행 시 브라우저 두 곳의 출발/도착 인식, 한쪽 RESET 중 다른 쪽 유지, AI 재시작 후 복구를 추가 확인한다.
