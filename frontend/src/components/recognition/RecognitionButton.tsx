@@ -1,9 +1,10 @@
 interface RecognitionButtonsProps {
   onRetry: () => void;
   onConfirm: () => void;
+  canConfirm?: boolean;
 }
 
-export default function RecognitionButtons({ onRetry, onConfirm }: RecognitionButtonsProps) {
+export default function RecognitionButtons({ onRetry, onConfirm, canConfirm = true }: RecognitionButtonsProps) {
   return (
     <div className="flex gap-4 w-full h-full">
       
@@ -19,8 +20,9 @@ export default function RecognitionButtons({ onRetry, onConfirm }: RecognitionBu
       
       <button
         onClick={onConfirm}
+        disabled={!canConfirm}
         className="flex-1 h-full bg-blue-500 text-white text-xl font-bold rounded-2xl 
-                   hover:bg-blue-600 active:scale-95 transition-all duration-150 shadow-md"
+                   hover:bg-blue-600 active:scale-95 transition-all duration-150 shadow-md disabled:opacity-40"
       >
         맞아요
       </button>

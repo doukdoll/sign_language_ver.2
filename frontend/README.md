@@ -81,58 +81,20 @@ http://localhost:8080/api
 
 ## 실시간 인식 흐름
 
-다음 구현에서 사용할 메시지 기준은 [WebSocket 규약 v1](../docs/RECOGNITION_PROTOCOL.md)입니다. 아래 내용은 현재 구현을 설명합니다.
+현재 인식 경로는 [WebSocket 규약 v1](../docs/RECOGNITION_PROTOCOL.md)을 사용합니다. 기존 START/FRAME 메시지만 보내는 클라이언트와는 호환되지 않습니다.
 
 ```text
-CameraFeed
-  └─ useHolistic
-       └─ buildKeypoints137
-            └─ hasValidHands
-                 └─ useKeypointStreaming
-                      └─ ws://localhost:8080/api/sign/stream
+Camera → useHolistic → buildKeypoints137 → useKeypointStreaming
+       → Backend /api/sign/stream → AI /ws/predict
 ```
 
-### WebSocket 송신
-
-연결 직후:
-
-```json
-{
-  "type": "START_SESSION",
-  "sessionId": "session-...",
-  "timestamp": 0,
-  "recognitionTarget": "DEPARTURE"
-}
-```
-
-키포인트 프레임:
-
-```json
-{
-  "type": "KEYPOINT_FRAME",
-  "sessionId": "session-...",
-  "timestamp": 0,
-  "frameIndex": 0,
-  "keypoints": [[0.0, 0.0]],
-  "recognitionTarget": "DEPARTURE"
-}
-```
-
-`keypoints`에는 Pose 25개, Face 70개, 왼손 21개, 오른손 21개가 순서대로 들어갑니다. 실제 변환 함수는 각 점을 `[x, y, confidence]` 형식으로 생성합니다. 위의 축약 예시와 달리 실제 전송은 137 × 3 배열입니다.
-
-### WebSocket 수신
-
-현재 클라이언트가 인식하는 주요 응답 필드는 다음과 같습니다.
-
-```json
-{
-  "departureCity": "서울역",
-  "arrivalCity": null,
-  "recognizedProb": 98.7
-}
-```
-
-`recognitionTarget`이 `DEPARTURE`이면 `departureCity`, `ARRIVAL`이면 `arrivalCity`를 화면에 표시합니다. `type: "RESULT"`와 `label` 형식도 fallback으로 처리합니다.
+- START에 브라우저 임의 ID를 넣지 않습니다. AI의 SESSION_STARTED가 중계되면 BE가 부여한 ID를 저장하고 프레임을 보냅니다.
+- 출발/도착 화면은 각각 DEPARTURE/ARRIVAL을 명시합니다.
+- 키포인트는 137 × 3 [x, y, confidence]이고 결측점은 [null, null, 0]입니다.
+- 다시 인식하기는 RESET_SESSION을 전송합니다. revision을 올려 이전 결과를 즉시 무효화하고, SESSION_RESET 이후 frameIndex 0부터 보냅니다.
+- RESULT의 ID·revision·대상·frameIndex를 검사합니다. 도시 필드는 대상에 맞는 것만 표시하고 <unk>는 확정할 수 없습니다.
+- 연결 종료/오류 시 기존 결과를 지우며, 새 연결에서 새 ID로 다시 시작합니다. 재접속 간격은 1~10초, START/RESET ACK 대기 제한은 10초입니다.
+- 페이지 이탈 시 END를 최선 노력으로 보낸 뒤 소켓을 닫습니다. BE의 연결 종료 처리도 해당 AI 세션을 정리합니다.
 
 ## 열차 조회
 
@@ -166,6 +128,7 @@ GET /api/train/search
 | --- | --- |
 | `npm run dev` | Vite 개발 서버 실행 |
 | `npm run build` | Vite 프로덕션 빌드 |
+| `npm test` | Node.js 22.6+에서 카메라 없는 세션 규약 회귀 테스트 |
 | `npm run lint` | ESLint 검사 |
 | `npm run preview` | 빌드 결과 로컬 미리보기 |
 
@@ -195,8 +158,6 @@ src/
 
 ## 현재 제한 사항
 
-- `useRecognitionFlow`의 옵션 타입과 내부 전달 로직에 `recognitionTarget`이 없어 현재 도착역 화면도 기본값 `DEPARTURE`로 전송합니다.
-- `useRecognitionFlow`의 스트리밍 상태 동기화에 `useState`가 사용되어 있어 의도한 반응형 갱신이 되지 않을 수 있습니다.
 - 백엔드 API 주소가 환경변수가 아닌 소스 코드에 고정되어 있습니다.
 - 시간표 API 실패가 mock 데이터로 숨겨져 연결 오류를 UI에서 알아보기 어렵습니다.
 - 결제와 좌석 재고는 프론트 전용 시뮬레이션입니다.
@@ -208,4 +169,7 @@ src/
 
 - `npm ci`: 성공. npm audit 기준 취약점 19개가 보고됩니다.
 - `npm run build`: 성공. 메인 JavaScript chunk가 500 kB를 넘어 분할 경고가 발생합니다.
-- `npm run lint`: 실패. 사용하지 않는 변수, `any` 타입, Hook dependency 등 17 errors / 8 warnings가 남아 있습니다.
+- `npm test`: 세션 규약 테스트 8개 통과(Node.js 24).
+- 변경한 인식 경로의 ESLint 검사: 통과.
+- `npm run lint`: 기존 화면에 사용하지 않는 변수, `any` 타입, Hook dependency 등 16 errors / 4 warnings가 남아 있습니다.
+- `npx tsc -b`: 기존 CameraFeed·HomePage·ReservationSummaryPage·TrainTimeTablePage의 미사용 변수 오류 11개로 실패합니다.

@@ -15,12 +15,12 @@ export default function DeparturePage() {
         serverUrl: import.meta.env.VITE_RECOGNITION_SERVER_URL || 'ws://localhost:8080/api/sign/stream',
         targetFps: 30,
         enableHandFilter: true,
-        recognitionTarget: "DEPARTURE", // ★ 자바 서버를 위해 추가! (출발지 페이지니까)
+        recognitionTarget: "DEPARTURE" as const,
         onRecognized: (label: string, prob: number) => {
             console.log(`출발역 인식 완료: ${label} (확률: ${prob})`);
             // 필요 시 자동 이동 로직
         },
-    }), [navigate]); // navigate가 바뀔 때만 새로 생성
+    }), []);
 
     // 위에서 만든 옵션을 여기에 넣어줍니다.
     const { videoRef, state, startRecognition, stopRecognition, resetResult } = useRecognitionFlow(recognitionOptions);
@@ -32,7 +32,7 @@ export default function DeparturePage() {
         return () => {
             stopRecognition();
         };
-    }, []); // 의존성 배열 비워둠 (한 번만 실행)
+    }, [startRecognition, stopRecognition]);
 
     const handleRetry = () => {
         resetResult();
@@ -95,11 +95,12 @@ export default function DeparturePage() {
 
             {/* 재시도 및 확인 버튼 */}
             <div className="flex-none w-full h-[80px] flex flex-col justify-center items-center">
-            {state.recognizedLabel && (
+            {(state.recognizedLabel || state.error) && (
                 <div className="w-[84%]  h-[65px]">
                     <RecognitionButtons
                         onRetry={handleRetry}
                         onConfirm={handleConfirm}
+                        canConfirm={state.isReady && state.recognizedLabel !== null}
                     />
                 </div>
             )} 

@@ -15,6 +15,7 @@ export default function ArrivalPage() {
   const { videoRef, state, startRecognition, stopRecognition, resetResult } = useRecognitionFlow({
     serverUrl: import.meta.env.VITE_RECOGNITION_SERVER_URL || 'ws://localhost:8080/api/sign/stream',
     targetFps: 30,
+    recognitionTarget: "ARRIVAL",
     enableHandFilter: true,
     onRecognized: (label, prob) => {
       console.log(`도착역 인식 완료: ${label} (확률: ${prob})`);
@@ -26,7 +27,7 @@ export default function ArrivalPage() {
     return () => {
       stopRecognition();
     };
-  }, []);
+  }, [startRecognition, stopRecognition]);
 
   const handleRetry = () => {
     resetResult();
@@ -99,11 +100,12 @@ export default function ArrivalPage() {
             )}*/}
             {/* 재시도 및 확인 버튼 */}
             <div className="flex-none w-full h-[80px] flex flex-col justify-center items-center">
-            {state.recognizedLabel && (
+            {(state.recognizedLabel || state.error) && (
               <div className="w-[84%]  h-[65px]">
                 <RecognitionButtons
                 onRetry={handleRetry}
                 onConfirm={handleConfirm}
+                canConfirm={state.isReady && state.recognizedLabel !== null}
                 />
               </div>
             )} 
