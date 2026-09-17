@@ -62,6 +62,7 @@ sign_language_ver.2/
 - [배포 모델 README](server/deployment/README.md)
 - [추론 테스트 README](server/tests/INFERENCE_TEST_README.md)
 - [Git Convention](GIT_CONVENTION.md)
+- [실시간 인식 WebSocket 규약 v1 — 구현 예정](docs/RECOGNITION_PROTOCOL.md)
 
 ## 로컬 실행
 

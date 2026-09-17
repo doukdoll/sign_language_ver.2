@@ -103,6 +103,8 @@ HTTP 요청은 한 프레임을 전처리한 뒤 마지막 프레임을 복제�
 
 ### WebSocket 요청
 
+다음 구현에서 사용할 메시지 기준은 [WebSocket 규약 v1](../docs/RECOGNITION_PROTOCOL.md)입니다. 아래 내용은 현재 구현을 설명합니다.
+
 연결 주소:
 
 ```text

@@ -69,7 +69,8 @@ de-docs/docker-guide
 - 기능 브랜치는 `develop`으로 병합한다.
 - 병합 방식은 **Squash and merge**를 사용해 작업 내역을 하나의 커밋으로 정리한다.
 - 병합이 끝나면 작업 브랜치를 삭제한다.
-- 배포 가능한 상태가 되면 `develop`에서 `main`으로 Pull Request를 생성해 병합한다.
+- 모든 수정 Pull Request의 대상 브랜치는 `develop`으로 지정한다.
+- `main` 비교 및 반영은 저장소 소유자가 직접 진행한다. 에이전트는 `main` 대상 Pull Request 생성이나 병합을 수행하지 않는다.
 
 ## 5. 기본 작업 흐름
 

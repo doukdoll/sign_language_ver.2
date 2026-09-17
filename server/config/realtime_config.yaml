@@ -9,6 +9,7 @@ model:
 
 # 실시간 처리 설정
 realtime:
+  session_idle_timeout: 120.0 # WebSocket 세션별 유휴 만료(초)
   window_size: 180 # ONNX 모델의 sequence_length
   fps_target: 24.0
   log_interval: 30 # 로그 출력 간격 (프레임)

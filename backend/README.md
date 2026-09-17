@@ -150,6 +150,8 @@ POST /api/signlanguage/seatclass
 
 ## WebSocket 중계
 
+다음 구현에서 사용할 메시지 기준은 [WebSocket 규약 v1](../docs/RECOGNITION_PROTOCOL.md)입니다. 아래 내용은 현재 구현을 설명합니다.
+
 프론트엔드는 다음 주소로 연결합니다.
 
 ```text

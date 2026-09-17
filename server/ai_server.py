@@ -10,6 +10,8 @@ import torch
 from flask import Flask, request, jsonify
 from flask_sock import Sock
 from simple_websocket.errors import ConnectionClosed
+from threading import Lock
+from realtime.sessions import SessionManager, serve_connection
 
 # --- 사용자 정의 모듈 임포트 ---
 from input_keypoint.advanced_validators import AdvancedHandValidator
@@ -168,10 +170,11 @@ VOCAB_PATH = "deployment/20251109-1439_Attention/vocabulary.txt"
 MODEL_TYPE = "onnx"
 
 logger.info("🚀 서버 시작: 모델 및 리소스 로딩 중...")
+realtime_config = config.get_realtime_config()
+inference_lock = Lock()
 
 try:
     SERVICE, VOCAB, DEVICE = load_model_and_vocab(MODEL_PATH, VOCAB_PATH, "auto", MODEL_TYPE)
-    realtime_config = config.get_realtime_config()
     logger.info(f"✅ 모델 로드 성공 (Device: {DEVICE}, Type: {MODEL_TYPE})")
 except Exception as e:
     logger.critical(f"❌ 치명적 오류: 모델 로드 실패. 서버를 종료해야 합니다. {e}", exc_info=True)
@@ -260,50 +263,31 @@ def http_predict_keypoints():
         logger.error(f"HTTP 처리 중 오류: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 # =============================================================================
-# [ROUTE] WebSocket (기존 코드 유지)
+# [ROUTE] WebSocket protocol v1
 # =============================================================================
 @sock.route('/ws/predict')
 def websocket_predict(ws):
-    # 기존 웹소켓 로직 유지
     logger.info("🔗 WebSocket 클라이언트 연결됨")
-    frame_buffer = deque(maxlen=MAX_BUFFER_FRAMES)
-    last_frame_index = -1
-    session_id = "unknown"
-    frames_since_last_inference = 0
 
-    while True:
-        try:
-            message_str = ws.receive()
-            if message_str is None: break
-            
-            message = json.loads(message_str)
-            msg_type = message.get('type')
+    def predict_window(frames):
+        # Keep the existing 128-frame window and model-side padding policy.
+        # Only the model is shared between connections, never their buffers.
+        with inference_lock:
+            result = SERVICE.predict(np.stack(frames), return_probabilities=True, top_k=3)
+        return result['top_prediction'], float(result['top_confidence'])
 
-            if msg_type == 'START_SESSION':
-                session_id = message.get('sessionId', 'unknown')
-                frame_buffer.clear()
-                ws.send(json.dumps({"status": "connected"}))
-
-            elif msg_type == 'KEYPOINT_FRAME':
-                keypoints_data = message.get('keypoints')
-                feature_vector = preprocess_frame(keypoints_data)
-                
-                if feature_vector is not None:
-                    frame_buffer.append(feature_vector)
-                    frames_since_last_inference += 1
-
-                    if len(frame_buffer) == MAX_BUFFER_FRAMES and \
-                       frames_since_last_inference >= INFERENCE_STRIDE:
-                        
-                        result = execute_inference(
-                            frame_buffer, SERVICE, GLOBAL_VALIDATOR, session_id, required_frames=MAX_BUFFER_FRAMES
-                        )
-                        if result: ws.send(json.dumps(result))
-                        frames_since_last_inference = 0
-
-        except Exception as e:
-            logger.error(f"WS Error: {e}")
-            break
+    manager = SessionManager(
+        preprocess_frame, predict_window,
+        window_size=MAX_BUFFER_FRAMES, stride=INFERENCE_STRIDE,
+        idle_timeout=realtime_config.get('session_idle_timeout', 120.0),
+        ready=lambda: SERVICE is not None,
+    )
+    try:
+        serve_connection(ws, manager)
+    except ConnectionClosed:
+        logger.info("WebSocket closed; connection-owned sessions released")
+    except Exception:
+        logger.exception("WebSocket transport failed; sessions released")
 
 if __name__ == '__main__':
     logger.info("🚀 Flask 앱 실행 중 (Port: 5001)...")

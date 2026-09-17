@@ -81,6 +81,8 @@ http://localhost:8080/api
 
 ## 실시간 인식 흐름
 
+다음 구현에서 사용할 메시지 기준은 [WebSocket 규약 v1](../docs/RECOGNITION_PROTOCOL.md)입니다. 아래 내용은 현재 구현을 설명합니다.
+
 ```text
 CameraFeed
   └─ useHolistic
@@ -116,7 +118,7 @@ CameraFeed
 }
 ```
 
-`keypoints`에는 Pose 25개, Face 70개, 왼손 21개, 오른손 21개가 순서대로 들어갑니다. 각 점은 `[x, y]` 형식입니다.
+`keypoints`에는 Pose 25개, Face 70개, 왼손 21개, 오른손 21개가 순서대로 들어갑니다. 실제 변환 함수는 각 점을 `[x, y, confidence]` 형식으로 생성합니다. 위의 축약 예시와 달리 실제 전송은 137 × 3 배열입니다.
 
 ### WebSocket 수신
 
