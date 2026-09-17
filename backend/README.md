@@ -1,160 +1,240 @@
-# Sign Language Transport Backend
+# Backend
 
-농인을 위한 수어 기반 대중교통 플랫폼 백엔드 서비스
+기차 시간표 조회와 예매 생성을 제공하고, 프론트엔드의 키포인트 스트림을 Python AI 서버로 중계하는 Spring Boot 애플리케이션입니다.
 
 ## 기술 스택
 
-- **Java 17**
-- **Spring Boot 3.2.5**
-- **Spring Data JPA**
-- **Spring WebFlux** (비동기 HTTP 클라이언트)
-- **Spring Security**
-- **H2 Database** (개발용) / **MySQL** (운영용)
-- **ZXing** (QR코드 생성)
-- **Jackson** (JSON 처리)
-- **OpenCSV** (CSV 파일 파싱)
-- **SpringDoc OpenAPI** (Swagger UI)
+- Java 17
+- Spring Boot 3.2.5
+- Spring MVC, Validation, Security
+- Spring WebSocket
+- Spring Data JPA
+- H2 개발 DB, MySQL 운영 DB
+- OpenCSV, ZXing, Lombok
+- SpringDoc OpenAPI 2.5.0
+
+## 구현 범위
+
+| 영역 | 상태 | 설명 |
+| --- | --- | --- |
+| 열차 데이터 초기화 | 구현 | 경부선 상·하행 CSV를 읽어 오늘부터 한 달 뒤까지의 운행 데이터를 생성합니다. |
+| 열차 검색 | 구현 | 출발역, 도착역, 출발 시간 조건으로 H2/MySQL을 조회합니다. |
+| 예매 생성 | 구현 | 열차 스케줄을 확인하고 예매 정보와 QR용 문자열을 저장합니다. |
+| 실시간 수어 중계 | 부분 구현 | Frontend WebSocket과 AI Server WebSocket 사이에서 JSON을 전달합니다. |
+| 수어 REST API | 임시 구현 | 도시·날짜·인원·여정·좌석 등급 응답은 현재 고정값입니다. |
+| 결제 API | 미구현 | 컨트롤러와 서비스만 있고 엔드포인트는 없습니다. |
+| 인증·인가 | 미구현 | 현재 주요 API와 WebSocket은 인증 없이 접근할 수 있습니다. |
+
+## 실행
+
+### 요구 사항
+
+- JDK 17
+- AI 연동을 확인하려면 `ws://localhost:5001/ws/predict`에서 실행 중인 추론 서버
+
+Windows:
+
+```powershell
+.\gradlew.bat bootRun
+```
+
+macOS/Linux:
+
+```bash
+./gradlew bootRun
+```
+
+기본 프로필은 `dev`이며 H2 인메모리 DB를 사용합니다. 애플리케이션이 시작되면 두 CSV 파일을 읽어 열차 스케줄을 자동 생성합니다.
+
+## 접속 주소
+
+| 용도 | 주소 |
+| --- | --- |
+| API base URL | `http://localhost:8080/api` |
+| Health check | `http://localhost:8080/api/health/ping` |
+| Swagger UI | `http://localhost:8080/api/swagger-ui.html` |
+| OpenAPI JSON | `http://localhost:8080/api/v3/api-docs` |
+| H2 Console | `http://localhost:8080/api/h2-console` |
+| Frontend WebSocket | `ws://localhost:8080/api/sign/stream` |
+
+H2 Console 기본값:
+
+```text
+JDBC URL: jdbc:h2:mem:testdb
+User Name: sa
+Password: (빈 값)
+```
+
+## HTTP API
+
+모든 경로 앞에는 context path `/api`가 붙습니다.
+
+### 상태 확인
+
+```http
+GET /api/health/ping
+```
+
+응답:
+
+```text
+pong
+```
+
+### 열차 검색
+
+```http
+GET /api/train/search
+```
+
+| Query parameter | 필수 | 형식 | 설명 |
+| --- | --- | --- | --- |
+| `departure` | 아니요 | 문자열 | 출발역입니다. `대구`는 동대구·서대구로 확장됩니다. |
+| `destination` | 아니요 | 문자열 | 도착역입니다. `대구`는 동대구·서대구로 확장됩니다. |
+| `departureFrom` | 아니요 | `yyyy-MM-dd HH:mm` | 생략하면 현재 시각을 사용합니다. |
+| `departureTo` | 아니요 | `yyyy-MM-dd HH:mm` | 조회 결과의 마지막 출발 시각입니다. |
+
+예시:
+
+```text
+GET /api/train/search?departure=서울&destination=부산&departureFrom=2026-09-17%2009:00
+```
+
+검색 범위는 `departureFrom`이 속한 날짜의 다음 날 00:00 이전까지입니다. 응답의 좌석 수, 좌석 등급, 가격, 상태는 현재 임시값으로 생성됩니다.
+
+### 예매 생성
+
+```http
+POST /api/booking/train
+Content-Type: application/json
+```
+
+요청 예시:
+
+```json
+{
+  "trainNumber": "KTX101",
+  "departureStation": "서울",
+  "arrivalStation": "부산",
+  "departureTime": "2026-09-17T09:00:00",
+  "arrivalTime": "2026-09-17T11:30:00",
+  "passengers": 1,
+  "seatType": "STANDARD",
+  "paymentMethod": "card",
+  "tripType": "one_way"
+}
+```
+
+`trainNumber`, `departureTime`, `arrivalTime`이 DB의 스케줄과 정확히 일치해야 합니다. 좌석 번호는 현재 `12호차 34A석`으로 고정되며 실제 좌석 재고를 차감하지 않습니다.
+
+### 수어 입력용 REST API
+
+```text
+POST /api/signlanguage/recognize
+POST /api/signlanguage/datetime
+POST /api/signlanguage/passengers
+POST /api/signlanguage/triptype
+POST /api/signlanguage/seatclass
+```
+
+공통 요청 형태:
+
+```json
+{
+  "signLanguageData": "입력값",
+  "recognitionTarget": "DEPARTURE"
+}
+```
+
+이 엔드포인트들은 현재 실제 모델을 호출하지 않습니다. `recognize`는 출발지 `서울` 또는 도착지 `부산`, 나머지는 날짜 `2025-11-05 14:30`, 승객 `2`, 여정 `왕복`, 좌석 `일반실` 같은 고정 응답을 반환합니다.
+
+## WebSocket 중계
+
+프론트엔드는 다음 주소로 연결합니다.
+
+```text
+ws://localhost:8080/api/sign/stream
+```
+
+연결 직후 세션 시작 메시지를 보냅니다.
+
+```json
+{
+  "type": "START_SESSION",
+  "sessionId": "browser-generated-id",
+  "timestamp": 0,
+  "recognitionTarget": "DEPARTURE"
+}
+```
+
+이후 프레임 단위 키포인트를 전송합니다.
+
+```json
+{
+  "type": "KEYPOINT_FRAME",
+  "sessionId": "browser-generated-id",
+  "frameIndex": 0,
+  "timestamp": 0,
+  "recognitionTarget": "DEPARTURE",
+  "keypoints": [[0.0, 0.0]]
+}
+```
+
+백엔드는 브라우저가 보낸 `sessionId` 대신 실제 Spring WebSocket 세션 ID를 넣어 AI 서버의 `/ws/predict`로 전달합니다. AI 응답의 `sessionId`를 이용해 원래 브라우저 세션을 찾으므로 AI 서버 응답에도 동일한 값이 반드시 포함되어야 합니다.
+
+## 설정
+
+주요 Spring property와 환경변수 이름은 다음과 같습니다.
+
+| Property | `docker-compose.yml`의 환경변수 | 기본값 |
+| --- | --- | --- |
+| `ai-server.ws-url` | `AI-SERVER_WS-URL` | `ws://localhost:5001/ws/predict` |
+| `ai-server.http-url` | `AI-SERVER_HTTP-URL` | `http://localhost:5001/predict_keypoints` |
+| `spring.profiles.active` | `SPRING_PROFILES_ACTIVE` | `dev` |
+| 운영 DB 사용자 | `DB_USERNAME` | `root` |
+| 운영 DB 비밀번호 | `DB_PASSWORD` | `password` |
+
+직접 실행하면서 AI 주소를 바꾸려면 Spring property `ai-server.ws-url`, `ai-server.http-url`을 JVM 옵션이나 별도 설정 파일로 전달할 수 있습니다.
+
+`prod` 프로필은 `jdbc:mysql://localhost:3306/sign_language_transport`에 접속하고 Hibernate `validate` 모드를 사용합니다. 스키마는 자동 생성되지 않습니다.
 
 ## 프로젝트 구조
 
-```
+```text
 src/main/java/com/capstone/
-├── SignLanguageTransportApplication.java    # 메인 애플리케이션
-├── config/                                 # 설정 클래스
-│   ├── WebConfig.java
-│   └── SecurityConfig.java
-├── controller/                             # REST API 컨트롤러
-│   ├── HealthController.java               # 헬스 체크 엔드포인트
-│   ├── TrainController.java
-│   ├── BookingController.java
-│   └── PaymentController.java
-├── service/                                # 비즈니스 로직
-│   ├── KorailService.java
-│   ├── TrainDataLoader.java                # CSV 데이터 로딩
-│   ├── BookingService.java
-│   └── PaymentService.java
-├── entity/                                 # JPA 엔티티
-│   ├── TrainSchedule.java                  # 열차 시간표 엔티티
-│   ├── Booking.java
-│   └── Payment.java
-├── dto/                                     # 데이터 전송 객체
-│   ├── SlotDataDto.java
-│   ├── TrainInfoDto.java
-│   └── BookingRequestDto.java
-├── repository/                              # 데이터 접근 계층
-│   ├── TrainScheduleRepository.java        # 열차 시간표 리포지토리
-│   ├── BookingRepository.java
-│   └── PaymentRepository.java
-└── util/                                    # 유틸리티
-    ├── JsonParser.java
-    └── QrGenerator.java
+├── config/         # CORS, Security, WebSocket, 예외 처리
+├── controller/     # REST 컨트롤러
+├── dto/            # 요청·응답 객체
+├── entity/         # Booking, Payment, TrainSchedule
+├── handler/        # Frontend/AI WebSocket 핸들러
+├── repository/     # JPA repository
+├── service/        # 열차, 예매, 수어, 데이터 적재 로직
+└── util/           # JSON, QR 문자열 유틸리티
 ```
 
-## 주요 기능
+## 테스트와 빌드
 
-### 1. 기차 조회 (Train)
-- 출발지, 목적지, 출발 시간 등 조건에 따른 열차 시간표 검색
-- CSV 파일을 통한 열차 시간표 데이터베이스 적재
-- AI에서 받은 슬롯 데이터로 기차 검색 (향후 개발 예정)
+Windows:
 
-### 2. 예매 (Booking)
-- 기차 예매 생성
-- 예매 조회 및 취소
-- 예매 번호 생성
+```powershell
+.\gradlew.bat test
+.\gradlew.bat build
+```
 
-### 3. 결제 (Payment)
-- 결제 처리 및 상태 관리
-- 환불 처리
-- 결제 시뮬레이션
+macOS/Linux:
 
-### 4. 유틸리티
-- JSON 파싱 (AI 슬롯 데이터)
-- QR코드 생성 (예매 완료 후)
+```bash
+./gradlew test
+./gradlew build
+```
 
-## API 엔드포인트
+현재 테스트 코드는 `SignLanguageServiceIntegrateTest` 한 파일이며 전체 API 동작을 포괄하지 않습니다.
 
-### 헬스 체크
-- `GET /api/health/ping` - 서버 상태 확인 (응답: `pong`)
+## 현재 제한 사항
 
-### 기차 조회
-- `GET /api/train/search` - 열차 시간표 검색
-  - **Request Parameters:**
-    - `departure` (Optional): 출발역 이름 (예: `서울`)
-    - `destination` (Optional): 도착역 이름 (예: `부산`)
-    - `departureFrom` (Optional): 검색 시작 시간 (ISO 8601 형식: `YYYY-MM-DDTHH:MM:SS`, 예: `2025-10-15T10:00:00`). 미입력 시 현재 시간부터 검색됩니다.
-    - `departureTo` (Optional): 검색 종료 시간 (ISO 8601 형식: `YYYY-MM-DDTHH:MM:SS`, 예: `2025-10-15T18:00:00`)
-  - **응답**: 조건에 맞는 열차 시간표 목록 (출발 시간 기준 오름차순 정렬)
-- `POST /api/train/search` - 슬롯 데이터로 기차 검색 (향후 AI 연동 시 사용)
-- `GET /api/train/{trainNumber}` - 특정 기차 정보 조회
-
-### 예매
-- `POST /api/booking` - 예매 생성
-- `GET /api/booking/{bookingNumber}` - 예매 조회
-- `GET /api/booking` - 전체 예매 조회
-- `PUT /api/booking/{bookingNumber}/cancel` - 예매 취소
-
-### 결제
-- `POST /api/payment/{bookingId}` - 결제 처리
-- `GET /api/payment/{paymentId}` - 결제 조회
-- `GET /api/payment/booking/{bookingId}` - 예매별 결제 조회
-- `POST /api/payment/{paymentId}/refund` - 환불 처리
-
-## 실행 방법
-
-### 1. 개발 환경 준비
-
--   **Java Development Kit (JDK) 17 이상** 설치
--   **Gradle** 설치 (또는 `./gradlew` Wrapper 사용)
-
-### 2. 프로젝트 빌드 및 실행
-
-1.  **프로젝트 클론**
-    ```bash
-    git clone [프로젝트_레포지토리_주소]
-    cd SignLanguageTransport/backend
-    ```
-2.  **의존성 설치 및 빌드 (Gradle)**
-    ```bash
-    ./gradlew clean build --refresh-dependencies
-    ```
-    *   `--refresh-dependencies`: Gradle 캐시 문제를 해결하기 위해 필요할 수 있습니다.
-3.  **애플리케이션 실행 (Gradle)**
-    ```bash
-    ./gradlew bootRun
-    ```
-    *   애플리케이션이 시작되면, `src/main/resources` 디렉토리에 있는 `경부선하행.csv`와 `경부선상행.csv` 파일의 데이터가 H2 인메모리 데이터베이스에 자동으로 적재됩니다. (이 과정에서 잠시 시간이 소요될 수 있습니다.)
-
-### 3. 애플리케이션 확인
-
--   **H2 콘솔**: `http://localhost:8080/api/h2-console`
-    *   JDBC URL: `jdbc:h2:mem:testdb`
-    *   User Name: `sa`
-    *   Password: `(비워둠)`
-    *   `Connect` 버튼을 클릭하여 데이터베이스를 탐색할 수 있습니다. `TRAIN_SCHEDULE` 테이블에서 CSV 데이터가 잘 적재되었는지 확인해 보세요.
--   **API Base URL**: `http://localhost:8080/api`
--   **헬스 체크**: `http://localhost:8080/api/health/ping` (브라우저에서 접속 시 `pong` 응답 확인)
--   **Swagger UI**: `http://localhost:8080/api/swagger-ui/index.html`
-    *   API 문서와 테스트를 위해 이 주소로 접속하세요. `GET /api/train/search` 엔드포인트를 통해 열차 시간표 조회 기능을 테스트할 수 있습니다.
-
-## 환경 설정
-
-### 개발 환경 (application-dev.yml)
-- H2 인메모리 데이터베이스
-- SQL 로깅 활성화
-- 디버그 로그 활성화
-- CSV 데이터는 애플리케이션 시작 시 H2 데이터베이스에 자동으로 적재됩니다.
-
-### 운영 환경 (application-prod.yml)
-- MySQL 데이터베이스
-- 로그 레벨 최적화
-- 보안 설정 강화
-
-## 향후 개발 계획
-
-1. **코레일 API 실제 연동**
-2. **카카오톡 API 연동** (예매 정보 전송)
-3. **지하철 API 연동**
-4. **실제 결제 시스템 연동**
-5. **보안 강화** (JWT 토큰, 암호화)
-6. **모니터링 및 로깅** (Actuator, Logback)
-
+- `PaymentController`와 `PaymentService`에는 구현된 API가 없습니다.
+- `recognizeCity_with_AI` HTTP 연동 메서드는 존재하지만 현재 REST 컨트롤러에서 호출하지 않습니다.
+- AI WebSocket 응답에 `sessionId`가 없으면 프론트로 결과를 전달할 수 없습니다.
+- WebSocket은 재연결 전략이 없으므로 AI 서버가 백엔드보다 늦게 시작하거나 연결이 끊기면 수동 재시작이 필요할 수 있습니다.
+- CORS와 주요 API가 전체 허용 상태이므로 운영 환경에 그대로 사용하면 안 됩니다.
+- 좌석, 요금, 결제는 실제 외부 시스템과 연동되지 않은 프로토타입 값입니다.

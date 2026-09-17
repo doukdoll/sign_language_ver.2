@@ -1,166 +1,167 @@
-# 배포된 모델 정보
+# 배포 모델
 
-## 📦 모델 파일
+서비스에서 사용할 ONNX 모델, 어휘 파일, 학습·검증 메타데이터를 보관합니다.
 
-이 디렉토리에는 배포용으로 export된 수어 인식 모델이 포함되어 있습니다.
+## 모델 목록
 
-### 파일 목록
+| 폴더 | Encoder | 입력 크기 | 검증 Accuracy | F1 weighted | 용도 |
+| --- | --- | --- | ---: | ---: | --- |
+| `20251109-1439_Attention` | Masked Attention | 180 × 274 | 0.9879 | 0.9876 | 현재 기본 모델 |
+| `20251109-1439_GRU` | Bidirectional GRU | 180 × 274 | 0.2909 | 0.1995 | 비교용 모델 |
 
-- **`.onnx`** - ONNX 런타임 호환 모델
-- **`deployment_info.yaml`** - 모델 메타정보 및 설정 (PyTorch/ONNX 공통)
-- **`vocabulary.txt`** - 클래스 어휘 사전 (12개 클래스)
+`ai_server.py`와 `config/realtime_config.yaml`은 기본적으로 Attention 모델을 사용합니다.
 
-## 🎯 모델 정보
+## 파일 구성
 
-- **클래스 수**: 12개
-- **특징 크기**: 274 (137 keypoints × 2)
-- **최대 시퀀스 길이**: 180 프레임
-
-## 🏗️ 모델 아키텍처
-
-```
-Encoder: GRU (bidirectional) + Attention
-├─ Hidden Size: 220
-├─ Num Layers: 1
-└─ Dropout: 0.3
-
-Embeddings: Spatial Embeddings
-└─ Embedding Dim: 440
-
-Output Layer: Linear
-└─ 12 classes
+```text
+deployment/
+├── inference_service.py
+├── 20251109-1439_Attention/
+│   ├── 20251109-1439.onnx
+│   ├── vocabulary.txt
+│   └── deployment_info.yaml
+├── 20251109-1439_GRU/
+│   ├── 20251109-1439.onnx
+│   ├── vocabulary.txt
+│   └── deployment_info.yaml
+└── README.md
 ```
 
-## 🚀 사용 방법
+- `.onnx`: ONNX Runtime용 추론 모델
+- `vocabulary.txt`: 출력 인덱스 순서와 동일한 클래스 목록
+- `deployment_info.yaml`: 모델 구조, 입력 크기, 학습 결과, export 정보
+- `inference_service.py`: PyTorch와 ONNX 모델을 공통 인터페이스로 감싸는 클래스
 
-### 1. Python에서 직접 사용 (PyTorch)
+## 입력 형식
+
+모델은 `float32` 배열을 입력받습니다.
+
+```text
+(sequence_length, 274)
+또는
+(batch_size, sequence_length, 274)
+```
+
+274개 feature는 137개 키포인트의 x, y 좌표입니다.
+
+| 영역 | 키포인트 수 | feature 수 |
+| --- | ---: | ---: |
+| Pose | 25 | 50 |
+| Face | 70 | 140 |
+| Left hand | 21 | 42 |
+| Right hand | 21 | 42 |
+| 합계 | 137 | 274 |
+
+ONNX 모델 메타데이터의 최대 시퀀스 길이는 180입니다. `SignLanguageInferenceService`는 긴 입력을 균등 다운샘플링하고 짧은 입력의 뒤쪽을 0으로 padding합니다.
+
+## 출력 클래스
+
+두 모델의 어휘는 동일합니다.
+
+```text
+경주
+광명
+대구
+대전
+서울역
+수원
+아산
+영등포
+울산
+천안
+포항
+<unk>
+```
+
+## Python에서 추론
+
+아래 코드는 `server` 디렉터리에서 실행하는 것을 기준으로 합니다.
 
 ```python
-from inference_service import SignLanguageInferenceService
 import numpy as np
 
-# 서비스 초기화
+from deployment.inference_service import SignLanguageInferenceService
+
 service = SignLanguageInferenceService(
-    model_path="deployment/multi_class_auto_model.pt",
-    device="cuda"  # 또는 "cpu"
+    model_path="deployment/20251109-1439_Attention/20251109-1439.onnx",
+    vocab_path="deployment/20251109-1439_Attention/vocabulary.txt",
+    model_type="onnx",
+    device="auto",
 )
 
-# 키포인트 데이터 준비 (예: 128 프레임, 274 특징)
-keypoints = np.load("your_keypoints.npy")  # Shape: (seq_len, 274)
-
-# 예측 수행
+keypoints = np.zeros((180, 274), dtype=np.float32)
 result = service.predict(
     keypoints,
     return_probabilities=True,
-    top_k=3
+    top_k=3,
 )
 
-print(f"예측 결과: {result['top_prediction']}")
-print(f"신뢰도: {result['top_confidence']:.2f}%")
+print(result["top_prediction"])
+print(result["top_confidence"])
+print(result["top_k_predictions"])
 ```
 
-### 2. REST API 서버 사용 (PyTorch)
+반환값의 `top_confidence`와 `top_k_predictions[*].confidence`는 0~100 백분율입니다.
 
-### 3. ONNX Runtime으로 추론
+## ONNX Runtime 직접 호출
 
 ```python
 import numpy as np
 import onnxruntime as ort
 
-session = ort.InferenceSession("deployment/multi_class_auto/multi_class_auto.onnx")
-
-keypoints = np.load("your_keypoints.npy")  # Shape: (seq_len, 274)
-
-if keypoints.ndim == 2:
-    keypoints = keypoints[np.newaxis, :, :]
-
-outputs = session.run(None, {"input": keypoints.astype(np.float32)})
-logits = outputs[0]
-prediction = np.argmax(logits, axis=1)
-```
-
-```bash
-# 서버 시작
-python api_server.py --model_path deployment/multi_class_auto_model.pt --device cuda
-
-# API 호출 (Python)
-import requests
-import numpy as np
-
-keypoints = np.random.randn(128, 274).tolist()
-
-response = requests.post(
-    "http://localhost:5000/predict",
-    json={
-        "keypoints": keypoints,
-        "return_probabilities": True,
-        "top_k": 3
-    }
+session = ort.InferenceSession(
+    "deployment/20251109-1439_Attention/20251109-1439.onnx",
+    providers=["CPUExecutionProvider"],
 )
 
-result = response.json()
-print(result['data']['top_prediction'])
+keypoints = np.zeros((1, 180, 274), dtype=np.float32)
+logits = session.run(None, {"input": keypoints})[0]
+prediction_index = int(np.argmax(logits, axis=1)[0])
 ```
 
-## 📝 API 엔드포인트
+ONNX 출력은 logits이므로 확률이 필요하면 softmax를 별도로 적용해야 합니다.
 
-- `GET /health` - 서버 상태 확인
-- `GET /model/info` - 모델 정보 조회
-- `POST /predict` - 단일 예측
-- `POST /predict/batch` - 배치 예측
-- `POST /predict/file` - CSV 파일로부터 예측
+## Attention 모델 상세
 
-## 📊 입력 형식
-
-### 키포인트 데이터
-
-```python
-# 형식 1: (seq_len, 274)
-keypoints = np.array([
-    [x1_pose, y1_pose, x2_pose, y2_pose, ..., x1_hand, y1_hand, ...],  # Frame 1
-    [x1_pose, y1_pose, x2_pose, y2_pose, ..., x1_hand, y1_hand, ...],  # Frame 2
-    ...
-])
-
-# 형식 2: (seq_len, 137, 2)
-keypoints = np.array([
-    [[x1, y1], [x2, y2], ..., [x137, y137]],  # Frame 1
-    [[x1, y1], [x2, y2], ..., [x137, y137]],  # Frame 2
-    ...
-])
+```text
+Encoder: masked_attention
+Embedding: spatial, 512 dimensions
+Hidden size: 256
+Layers: 1
+Bidirectional: true
+Classes: 12
+Sequence length: 180
+Feature size: 274
+ONNX opset: 12
 ```
 
-### 키포인트 구성
+`deployment_info.yaml`에 기록된 검증 결과:
 
-- **Pose**: 25 keypoints (0-24)
-- **Face**: 70 keypoints (25-94)
-- **Hands**: 42 keypoints (95-136)
-  - Left Hand: 21 keypoints (95-115)
-  - Right Hand: 21 keypoints (116-136)
+- Accuracy: 0.9878787879
+- F1 macro: 0.9876413909
+- F1 weighted: 0.9876413909
+- WER: 0.0121212121
 
-**총 137 keypoints × 2 (x, y) = 274 features**
+이 수치는 해당 학습·검증 데이터 분할에서 얻은 값이며 실제 키오스크 환경의 일반화 성능을 보장하지 않습니다.
 
-## 🔧 요구사항
+## GRU 모델 상세
 
-```bash
-pip install torch numpy pyyaml
-# API 서버용
-pip install flask flask-cors pandas
+```text
+Encoder: gru
+Embedding: spatial, 384 dimensions
+Hidden size: 192
+Layers: 1
+Bidirectional: true
+Classes: 12
+Sequence length: 180
+Feature size: 274
+ONNX opset: 12
 ```
 
-## 📚 추가 문서
+## 주의 사항
 
-- `DEPLOYMENT_GUIDE.md` - 상세한 배포 가이드
-- `README.md` (프로젝트 루트) - 전체 프로젝트 문서
-
-## ⚠️ 주의사항
-
-1. **PyTorch 버전**: PyTorch 2.6+ 호환성 확인됨
-2. **입력 정규화**: 키포인트는 이미 정규화된 상태여야 합니다
-3. **시퀀스 길이**: 가변 길이 지원 (최대 200 프레임 권장)
-4. **디바이스**: GPU 사용 시 CUDA가 설치되어 있어야 합니다
-5. **ONNX 추론**: `onnxruntime` 1.16+ 권장, 입력은 `float32` 형식 유지
-
-## 📞 문의
-
-문제가 발생하면 프로젝트 이슈 트래커에 보고해주세요.
+- 모델 입력 전에 학습 때와 동일한 키포인트 순서와 정규화를 적용해야 합니다.
+- `vocabulary.txt`의 줄 순서를 변경하면 출력 클래스가 잘못 매핑됩니다.
+- 기본 requirements는 CPU용 `onnxruntime`입니다. CUDA 실행에는 호환되는 `onnxruntime-gpu` 환경이 필요합니다.
+- 모델 파일명은 두 폴더에서 동일하므로 경로를 폴더까지 정확히 지정해야 합니다.
+- 과거 문서에 언급된 `multi_class_auto`, `20251014-202250`, REST `/predict` 서버 파일은 현재 저장소에 없습니다.
