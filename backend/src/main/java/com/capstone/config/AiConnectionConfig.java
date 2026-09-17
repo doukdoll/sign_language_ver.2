@@ -1,39 +1,43 @@
 package com.capstone.config;
 
 import com.capstone.handler.InferenceClientHandler;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Bean;
+import jakarta.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.socket.client.WebSocketConnectionManager;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 
-@Slf4j
+import java.util.concurrent.CompletableFuture;
+
+/** Retry a failed AI connection without replaying old users' sessions. */
 @Configuration
-@RequiredArgsConstructor
+@EnableScheduling
 public class AiConnectionConfig {
+    private final InferenceClientHandler handler;
+    private final StandardWebSocketClient client = new StandardWebSocketClient();
+    private CompletableFuture<WebSocketSession> attempt;
+    private boolean stopped;
 
-    private final InferenceClientHandler inferenceClientHandler;
+    @Value("${ai-server.ws-url:ws://localhost:5001/ws/predict}")
+    private String url;
 
-    @org.springframework.beans.factory.annotation.Value("${ai-server.ws-url:ws://localhost:5001/ws/predict}")
-    private String aiServerUrl;
+    public AiConnectionConfig(InferenceClientHandler handler) { this.handler = handler; }
 
-    @Bean
-    public WebSocketConnectionManager wsConnectionManager() {
-        // 2. StandardWebSocketClient: Spring이 클라이언트가 되게 해주는 객체
-        StandardWebSocketClient client = new StandardWebSocketClient();
+    @Scheduled(fixedDelayString = "${ai-server.reconnect-delay-ms:5000}")
+    public synchronized void reconnect() {
+        if (stopped || handler.isConnected() || (attempt != null && !attempt.isDone())) return;
+        attempt = client.execute(handler, url);
+    }
 
-        // 3. 매니저 생성 (Client, Handler, URL 연결)
-        WebSocketConnectionManager manager = new WebSocketConnectionManager(
-                client,
-                inferenceClientHandler, // 기존 핸들러 재사용
-                aiServerUrl
-        );
-
-        // 4. 자동 연결 설정
-        manager.setAutoStartup(true);
-
-        log.info("🔌 AI 서버 연결 관리자가 시작되었습니다. 대상: {}", aiServerUrl);
-        return manager;
+    @PreDestroy
+    public synchronized void stop() {
+        stopped = true;
+        if (attempt != null) attempt.whenComplete((session, error) -> {
+            if (session != null) {
+                try { session.close(); } catch (java.io.IOException ignored) { }
+            }
+        });
     }
 }
