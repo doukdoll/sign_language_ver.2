@@ -1,6 +1,6 @@
 # 실시간 수어 인식 WebSocket 규약 v1
 
-상태: FE·BE·AI에 v1 세션 처리 적용, 실제 카메라·ONNX 통합 검증 대기 (2026-09-17).
+상태: 실제 FE 세션 코드·BE·Python·ONNX 연결 검증 완료, 브라우저 카메라 검증 대기 (2026-09-18). [실행 기록과 재현 방법](LIVE_RECOGNITION_CHECK.md)
 
 이 문서는 FE·BE·AI의 공통 규약이다. 세 구성 요소를 함께 적용해야 하며 이전 버전 메시지와는 호환되지 않는다. HTTP `/predict_keypoints`는 이번 규약의 대상이 아니다.
 

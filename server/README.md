@@ -114,6 +114,8 @@ HTTP 요청은 한 프레임을 전처리한 뒤 마지막 프레임을 복제�
 
 모델 없이 실행하는 세션 회귀 테스트: `python -m unittest tests.test_sessions -v`
 
+실제 CPU ONNX 연결 검증 환경과 최소 의존성 설치 방법은 [실행 기록](../docs/LIVE_RECOGNITION_CHECK.md)을 참고합니다.
+
 ## 키포인트 전처리
 
 프레임당 키포인트 순서는 다음과 같습니다.

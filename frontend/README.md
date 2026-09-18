@@ -129,6 +129,7 @@ GET /api/train/search
 | `npm run dev` | Vite 개발 서버 실행 |
 | `npm run build` | Vite 프로덕션 빌드 |
 | `npm test` | Node.js 22.6+에서 카메라 없는 세션 규약 회귀 테스트 |
+| `npm run test:recognition:live` | 실행 중인 실제 BE·Python·ONNX에 합성 키포인트를 전송하는 연결 검사 |
 | `npm run lint` | ESLint 검사 |
 | `npm run preview` | 빌드 결과 로컬 미리보기 |
 
@@ -164,6 +165,8 @@ src/
 - 일부 화면은 `any` 타입과 임시 콘솔 로그를 사용합니다.
 
 ## 현재 검증 결과
+
+실제 서버 연결 검증과 카메라 확인 절차는 [실행 기록](../docs/LIVE_RECOGNITION_CHECK.md)을 참고합니다. 합성 데이터 연결 성공은 인식 정확도 평가가 아닙니다.
 
 2026-09-17 기준으로 잠금 파일을 사용해 확인한 결과입니다.
 
