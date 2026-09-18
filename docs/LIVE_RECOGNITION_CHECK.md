@@ -1,0 +1,106 @@
+# 실제 인식 경로 연결 검증
+
+## 확인 범위
+
+2026-09-18 Windows CPU 환경에서 FE의 실제 RecognitionSession 코드를 Node로 실행하고,
+실제 Spring Boot → Python Flask → ONNX 모델을 연결해 검증했다.
+모의 AI 응답이 아닌 실제 모델 추론을 사용했다.
+
+**입력은 합성 키포인트다. 수어 인식 정확도, 브라우저 카메라, MediaPipe 변환, React Hook의 재접속 동작을 검증한 결과는 아니다.**
+
+- 서로 다른 두 BE 세션 ID와 AI 시작 ACK
+- 두 사용자의 128프레임 교차 전송 및 대상별 RESULT 수신
+- A RESET 후 frameIndex 0 재시작, B의 버퍼·revision 유지
+- 오래된 revision과 다른 사용자의 ID를 넣은 요청 거절
+- A END 후에도 B 추론 유지
+- 실제 AI 프로세스 단절 시 두 사용자에게 AI_UNAVAILABLE 전달
+- AI 재기동 후 BE가 자동 재접속하고 새 세션에서 동일 테스트 통과
+- 테스트 프로세스의 유휴 제한을 3초로 설정했을 때 SESSION_EXPIRED 전달
+- 테스트 종료 후 기본 유휴 제한 120초 복원
+
+첫 단절 검증 시도는 로컬 프로세스 종료 명령 오류로 제한 시간을 넘겼다.
+프로세스를 확인하고 종료한 재실행에서는 단절 검증이 통과했다.
+
+## 검증 환경
+
+| 항목 | 값 |
+| --- | --- |
+| Python | 3.10.21, 프로젝트 전용 venv |
+| PyTorch | 2.14.0+cpu |
+| NumPy / pandas | 1.24.4 / 2.0.3 |
+| ONNX Runtime | 1.23.2, CPU |
+| Flask / flask-sock / simple-websocket | 3.1.2 / 0.7.0 / 1.1.0 |
+| PyYAML | 6.0.3 |
+| Java / Gradle | 17.0.19 / 8.14.4 |
+| Node.js | 24.18.0 |
+| 모델 | deployment/20251109-1439_Attention/20251109-1439.onnx |
+| 모델 SHA-256 | 322eda144b2f26b44f57160c7b66b1c7be0217da2820ea06df045f96944368ed |
+
+기존 모델·가중치·전처리·128/180 프레임 정책은 변경하지 않았다.
+서버 실행에 필요한 최소 의존성만 설치했고 전체 requirements.txt 설치는 검증하지 않았다.
+requirements-smoke.txt는 직접 의존성 목록이며 전체 전이 의존성 lockfile은 아니다.
+실행 환경에서 pip check는 통과했다.
+
+## 재현 방법 (PowerShell)
+
+Python 3.10, JDK 17, Gradle 8.14.4, Node.js 22.6 이상을 준비한다.
+현재 저장소에는 Gradle wrapper JAR가 없으므로 설치된 Gradle을 사용한다.
+
+AI 환경 준비 — 저장소 루트:
+
+```powershell
+py -3.10 -m venv server/venv
+server/venv/Scripts/python.exe -m pip install torch==2.14.0+cpu --index-url https://download.pytorch.org/whl/cpu
+server/venv/Scripts/python.exe -m pip install -r server/requirements-smoke.txt
+server/venv/Scripts/python.exe -m pip check
+```
+
+터미널 1 — AI (로컬 주소에만 바인딩):
+
+```powershell
+cd server
+./venv/Scripts/python.exe -X utf8 -c "import ai_server; assert ai_server.SERVICE is not None; ai_server.app.run(host='127.0.0.1', port=5001, debug=False)"
+```
+
+터미널 2 — BE:
+
+```powershell
+cd backend
+gradle bootJar
+java -jar build/libs/sign-language-transport-backend-0.0.1-SNAPSHOT.jar --server.address=127.0.0.1 --spring.profiles.active=test
+```
+
+test 프로필은 열차 CSV 자동 적재를 생략하고 H2 인메모리 DB를 사용한다.
+여기서는 인식 연결만 검증하며 열차 검색·예매 데이터 검증은 포함하지 않는다.
+
+터미널 3 — 합성 데이터 연결 검증:
+
+```powershell
+cd frontend
+npm ci
+npm run test:recognition:live
+```
+
+주소 변경: `npm run test:recognition:live -- ws://127.0.0.1:8080/api/sign/stream`
+
+- 단절 검증: `npm run test:recognition:live -- --expect-disconnect` 실행 후 READY 출력 시 **테스트 AI 서버만** 종료한다. 30초 안에 오류가 전달되어야 한다. AI를 다시 실행하고 기본 검증을 재실행한다.
+- 만료 검증: 별도 AI 테스트 프로세스에서 app.run 전에 `ai_server.realtime_config['session_idle_timeout'] = 3.0`을 설정하고 `npm run test:recognition:live -- --expect-expiry`를 실행한다. 끝나면 그 프로세스를 종료하고 기본 설정으로 다시 실행한다. 저장소 YAML은 변경하지 않는다.
+- 기본 `npm test`는 서버가 필요 없는 단위 테스트이며 live 테스트와 분리돼 있다.
+
+## 사용자가 확인할 카메라 단계
+
+```powershell
+cd frontend
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+```
+
+1. 브라우저에서 http://127.0.0.1:5173/departure 에 접속하고 카메라 권한을 허용한다.
+2. 실제 수어로 출발역을 입력하고 결과가 표시되는지 확인한다.
+3. 다시 인식하기를 누른 직후 이전 결과가 사라지고 새 동작의 결과만 표시되는지 확인한다.
+4. 맞아요를 눌러 도착역 화면으로 이동하고 도착역 인식을 확인한다.
+5. AI를 재시작했을 때 화면의 오류·결과 초기화·재접속을 확인한다.
+6. 두 카메라를 사용할 수 있다면 두 브라우저에서 A의 재시도가 B를 방해하지 않는지 확인한다.
+
+한 카메라의 여러 탭 동시 사용은 브라우저·장치에 따라 제한될 수 있다.
+사용자 간 서버 격리는 위 합성 데이터 테스트로 별도 확인했다.
+이 단계가 끝나기 전에는 카메라 포함 E2E 검증 완료로 표시하지 않는다.

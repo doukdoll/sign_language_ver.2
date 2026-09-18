@@ -30,6 +30,7 @@
 ### 요구 사항
 
 - JDK 17
+- Gradle 8.14.4 (현재 저장소에 wrapper JAR가 없으므로 아래 `gradlew` 명령 대신 설치된 `gradle`을 사용할 수 있습니다.)
 - AI 연동을 확인하려면 `ws://localhost:5001/ws/predict`에서 실행 중인 추론 서버
 
 Windows:
@@ -150,37 +151,16 @@ POST /api/signlanguage/seatclass
 
 ## WebSocket 중계
 
-프론트엔드는 다음 주소로 연결합니다.
+현재 중계는 [WebSocket 규약 v1](../docs/RECOGNITION_PROTOCOL.md)을 사용합니다.
 
-```text
-ws://localhost:8080/api/sign/stream
-```
-
-연결 직후 세션 시작 메시지를 보냅니다.
-
-```json
-{
-  "type": "START_SESSION",
-  "sessionId": "browser-generated-id",
-  "timestamp": 0,
-  "recognitionTarget": "DEPARTURE"
-}
-```
-
-이후 프레임 단위 키포인트를 전송합니다.
-
-```json
-{
-  "type": "KEYPOINT_FRAME",
-  "sessionId": "browser-generated-id",
-  "frameIndex": 0,
-  "timestamp": 0,
-  "recognitionTarget": "DEPARTURE",
-  "keypoints": [[0.0, 0.0]]
-}
-```
-
-백엔드는 브라우저가 보낸 `sessionId` 대신 실제 Spring WebSocket 세션 ID를 넣어 AI 서버의 `/ws/predict`로 전달합니다. AI 응답의 `sessionId`를 이용해 원래 브라우저 세션을 찾으므로 AI 서버 응답에도 동일한 값이 반드시 포함되어야 합니다.
+- FE 연결: ws://localhost:8080/api/sign/stream
+- AI 연결: ws://localhost:5001/ws/predict
+- 최초 START에 BE WebSocket ID를 추가하고, 이후에는 FE 요청 ID가 실제 연결 ID와 같은지 검사합니다.
+- ACK/RESULT/ERROR는 WS 전용 RecognitionMessage 검증 및 JSON 트리로 처리합니다. 기존 REST DTO는 변경하지 않습니다.
+- AI 응답을 ID 소유자에게만 전달하고 START/RESET ACK 전에는 프레임을 받지 않습니다. 공유 AI 소켓 쓰기는 직렬화합니다.
+- FE 종료 시 해당 세션 END만 전달합니다. AI 단절 시 영향받는 FE에 AI_UNAVAILABLE을 알리고 매핑과 연결을 정리합니다.
+- AI 연결을 기본 5초 간격으로 재시도합니다. 재접속 중인 연결 시도는 중복 생성하지 않습니다. 복구 후 기존 버퍼를 복원하지 않고 FE가 새 세션으로 시작합니다.
+- 유휴 만료는 AI가 판정하며 SESSION_EXPIRED를 받은 FE만 정리합니다.
 
 ## 설정
 
@@ -228,13 +208,15 @@ macOS/Linux:
 ./gradlew build
 ```
 
-현재 테스트 코드는 `SignLanguageServiceIntegrateTest` 한 파일이며 전체 API 동작을 포괄하지 않습니다.
+세션 중계 회귀 테스트는 `InferenceClientHandlerTest`에 있습니다. ID 위조, 응답 라우팅, RESET, 연결 종료/만료, 동시 쓰기를 검사합니다. 실제 카메라·ONNX 모델을 포함한 테스트는 별도입니다.
+
+`WebSocketRelayIntegrationTest`는 임의 로컬 포트에서 실제 WebSocket 두 개와 공유 AI 연결을 열어 중계를 검증합니다. AI는 결정적 응답을 반환하는 모의 서버이며 모델 추론을 수행하지 않습니다. 기존 HTTP 테스트는 로컬 CSV 경로 대신 MockRestServiceServer로 현재 요청 형식과 오류 응답을 검사합니다.
 
 ## 현재 제한 사항
 
 - `PaymentController`와 `PaymentService`에는 구현된 API가 없습니다.
 - `recognizeCity_with_AI` HTTP 연동 메서드는 존재하지만 현재 REST 컨트롤러에서 호출하지 않습니다.
 - AI WebSocket 응답에 `sessionId`가 없으면 프론트로 결과를 전달할 수 없습니다.
-- WebSocket은 재연결 전략이 없으므로 AI 서버가 백엔드보다 늦게 시작하거나 연결이 끊기면 수동 재시작이 필요할 수 있습니다.
+- AI 연결 재시도 간격은 `ai-server.reconnect-delay-ms`(기본 5000)로 설정합니다. 실패 중에는 정상 인식 결과를 반환하지 않습니다.
 - CORS와 주요 API가 전체 허용 상태이므로 운영 환경에 그대로 사용하면 안 됩니다.
 - 좌석, 요금, 결제는 실제 외부 시스템과 연동되지 않은 프로토타입 값입니다.

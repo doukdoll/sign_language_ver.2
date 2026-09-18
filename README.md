@@ -62,6 +62,7 @@ sign_language_ver.2/
 - [배포 모델 README](server/deployment/README.md)
 - [추론 테스트 README](server/tests/INFERENCE_TEST_README.md)
 - [Git Convention](GIT_CONVENTION.md)
+- [실시간 인식 WebSocket 규약 v1](docs/RECOGNITION_PROTOCOL.md)
 
 ## 로컬 실행
 
@@ -169,8 +170,7 @@ Python 추론 테스트는 [추론 테스트 README](server/tests/INFERENCE_TEST
 
 ## 현재 확인된 제한 사항
 
-- AI 서버의 WebSocket 응답에는 현재 `sessionId`가 포함되지 않아 백엔드가 여러 프론트 세션 중 응답 대상을 찾지 못할 수 있습니다.
-- 프론트 `useRecognitionFlow`는 `recognitionTarget`을 외부 옵션으로 전달하지 않아 도착역 화면도 기본값 `DEPARTURE`로 요청합니다.
+- 실시간 인식은 WebSocket v1 세션 규약을 사용합니다. 실제 카메라·ONNX를 포함한 전체 경로의 실행 검증은 별도이며, 프로토콜 회귀 테스트만으로 모델 품질을 보장하지 않습니다.
 - 승객 수, 편도·왕복, 날짜·시간, 좌석 등급용 REST 인식 API는 실제 모델 추론이 아니라 고정 응답을 반환합니다.
 - 시간표 조회 오류나 빈 결과가 발생하면 프론트는 2025년 기준 mock 데이터를 표시합니다.
 - 결제 화면은 시뮬레이션이며 실제 결제 승인이나 백엔드 저장을 수행하지 않습니다.

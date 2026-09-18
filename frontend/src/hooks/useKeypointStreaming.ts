@@ -1,217 +1,125 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { RecognitionSession } from '../utils/recognitionSession';
+import type { RecognitionTarget, StreamingState } from '../utils/recognitionSession';
 
+export type { StreamingState } from '../utils/recognitionSession';
 export interface StreamingOptions {
-    enabled: boolean;
-    serverUrl: string;
-    targetFps?: number;
-    recognitionTarget?: string;
-    onRecognized?: (label: string, prob: number) => void;
-    onError?: (error: Error) => void;
-}
-
-export interface StreamingState {
-    isConnected: boolean;
-    framesSent: number;
-    lastError: string | null;
+  enabled: boolean;
+  serverUrl: string;
+  targetFps?: number;
+  recognitionTarget: RecognitionTarget;
+  onRecognized?: (label: string | null, prob: number) => void;
+  onError?: (error: Error) => void;
 }
 
 export function useKeypointStreaming(options: StreamingOptions) {
-    const {
-        enabled,
-        serverUrl,
-        targetFps = 10,
-        recognitionTarget = "DEPARTURE",
-        onRecognized,
-        onError,
-    } = options;
+  const { enabled, serverUrl, targetFps = 10, recognitionTarget, onRecognized, onError } = options;
+  const [state, setState] = useState<StreamingState>({ isConnected: false, framesSent: 0, lastError: null });
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
+  const sessionRef = useRef<RecognitionSession | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const lastSentTimeRef = useRef(0);
+  const callbacks = useRef({ onRecognized, onError });
+  useEffect(() => { callbacks.current = { onRecognized, onError }; }, [onRecognized, onError]);
 
-    const [state, setState] = useState<StreamingState>({
-        isConnected: false,
-        framesSent: 0,
-        lastError: null,
-    });
+  useEffect(() => {
+    if (!enabled) {
+      setState(prev => ({ ...prev, isConnected: false }));
+      return;
+    }
+    let disposed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    let ackTimer: ReturnType<typeof setTimeout> | undefined;
+    let retryDelay = 1000;
+    let current: WebSocket | null = null;
 
-    const wsRef = useRef<WebSocket | null>(null);
-    const lastSentTimeRef = useRef<number>(0);
-    const frameCountRef = useRef<number>(0);
-    // 🔍 로그 폭탄 방지용 카운터 (30번에 1번만 찍기 위함)
-    const logThrottleRef = useRef<number>(0);
-
-    const sessionIdRef = useRef<string>(
-        `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    );
-
-    const onRecognizedRef = useRef(onRecognized);
-    const onErrorRef = useRef(onError);
-
-    useEffect(() => {
-        onRecognizedRef.current = onRecognized;
-        onErrorRef.current = onError;
-    }, [onRecognized, onError]);
-
-    useEffect(() => {
-        if (!enabled) {
-            if (wsRef.current) {
-                wsRef.current.close();
-                wsRef.current = null;
-            }
-            setState((prev) => ({ ...prev, isConnected: false }));
-            return;
-        }
-
-        const connectWebSocket = () => {
-            try {
-                const wsUrl = serverUrl.replace(/^http/, 'ws');
-                const ws = new WebSocket(wsUrl);
-
-                ws.onopen = () => {
-                    console.log('WebSocket 연결 성공');
-                    setState((prev) => ({ ...prev, isConnected: true, lastError: null }));
-
-                    if (ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({
-                            type: 'START_SESSION',
-                            sessionId: sessionIdRef.current,
-                            timestamp: Date.now(),
-                            recognitionTarget: recognitionTarget
-
-                        }));
-                    }
-                };
-
-                ws.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        // 서버로부터 온 응답 로그 (디버깅용)
-                        console.log("📩 서버 응답 수신:", data);
-
-                        let recognizedLabel = null;
-                        let recognizedProb = data.recognizedProb ?? 0;
-
-                        if (recognitionTarget === "DEPARTURE" && data.departureCity) {
-                            recognizedLabel = data.departureCity;
-                        } else if (recognitionTarget === "ARRIVAL" && data.arrivalCity) {
-                            recognizedLabel = data.arrivalCity;
-                        } else if (data.type === 'RESULT' && data.label) { // Fallback for generic RESULT type
-                            recognizedLabel = data.label;
-                        }
-
-                        if (recognizedLabel !== null && onRecognizedRef.current) {
-                            onRecognizedRef.current(recognizedLabel, recognizedProb);
-                        }
-
-                    } catch (err) {
-                        console.error('메시지 파싱 실패:', err);
-                    }
-                };
-
-                ws.onerror = (event) => {
-                    console.error('WebSocket 에러:', event);
-                    setState((prev) => ({
-                        ...prev,
-                        isConnected: false,
-                        lastError: 'WebSocket 연결 오류',
-                    }));
-                    if (onErrorRef.current) {
-                        onErrorRef.current(new Error('WebSocket 연결 오류'));
-                    }
-                };
-
-                ws.onclose = () => {
-                    console.log('WebSocket 연결 종료');
-                    setState((prev) => ({ ...prev, isConnected: false }));
-                    wsRef.current = null;
-                };
-
-                wsRef.current = ws;
-            } catch (err) {
-                console.error('WebSocket 초기화 실패:', err);
-                setState((prev) => ({
-                    ...prev,
-                    lastError: err instanceof Error ? err.message : 'WebSocket 초기화 실패',
-                }));
-                if (onErrorRef.current && err instanceof Error) {
-                    onErrorRef.current(err);
-                }
-            }
-        };
-
-        connectWebSocket();
-
-        return () => {
-            if (wsRef.current) {
-                wsRef.current.close();
-                wsRef.current = null;
-            }
-        };
-    }, [enabled, serverUrl, recognitionTarget]);
-
-    // ★★★ [추가] 프레임 카운터 초기화 함수
-    const resetFrameCount = useCallback(() => {
-        // 1. 내부 로직용 카운터 리셋
-        frameCountRef.current = 0;
-        logThrottleRef.current = 0;
-
-        // 3. UI 표시용 상태 리셋 (isConnected는 건드리지 않음)
-        setState(prev => ({
-            ...prev,
-            framesSent: 0,
-            lastError: null
-        }));
-
-        console.log("🔄 프레임 카운트 및 상태가 초기화되었습니다.");
-    }, []);
-
-    const sendKeypoints = useCallback(
-        (keypoints: number[][]) => {
-            if (!enabled || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-                return;
-            }
-
-            const now = Date.now();
-            const minInterval = 1000 / targetFps;
-            if (now - lastSentTimeRef.current < minInterval) {
-                return;
-            }
-
-            const sanitizedKeypoints = keypoints.map(point =>
-                point.map(val => val ?? 0)
-            );
-
-            try {
-                const message = {
-                    type: 'KEYPOINT_FRAME',
-                    sessionId: sessionIdRef.current,
-                    timestamp: now,
-                    frameIndex: frameCountRef.current++,
-                    keypoints: sanitizedKeypoints,
-                    recognitionTarget: recognitionTarget
-                };
-
-                // 🔍 [디버깅용] 30프레임마다 한 번씩 전송 데이터 로그 출력
-                logThrottleRef.current += 1;
-                if (logThrottleRef.current % 30 === 0) {
-                    console.log("🚀 [전송 중] WebSocket 데이터 확인:", message);
-                    console.log(`   - 키포인트 개수: ${sanitizedKeypoints.length}`);
-                    console.log(`   - 타겟: ${recognitionTarget}`);
-                }
-
-                wsRef.current.send(JSON.stringify(message));
-                lastSentTimeRef.current = now;
-                setState((prev) => ({ ...prev, framesSent: prev.framesSent + 1 }));
-            } catch (err) {
-                console.error('키포인트 전송 실패:', err);
-                if (onErrorRef.current && err instanceof Error) {
-                    onErrorRef.current(err);
-                }
-            }
+    const connect = () => {
+      if (disposed) return;
+      const ws = new WebSocket(serverUrl.replace(/^http/, 'ws'));
+      current = ws;
+      wsRef.current = ws;
+      const live = () => !disposed && current === ws;
+      const session = new RecognitionSession(recognitionTarget,
+        message => {
+          ws.send(JSON.stringify(message));
+          if (message.type === 'START_SESSION' || message.type === 'RESET_SESSION') {
+            clearTimeout(ackTimer);
+            ackTimer = setTimeout(() => {
+              if (live() && session.phase !== 'active') {
+                session.fail('인식 서버 확인 응답이 없습니다. 다시 연결합니다.');
+                ws.close();
+              }
+            }, 10000);
+          }
         },
-        [enabled, targetFps, recognitionTarget]
-    );
+        next => {
+          if (!live()) return;
+          if (next.isConnected) { clearTimeout(ackTimer); retryDelay = 1000; }
+          setState(next);
+        },
+        (label, prob) => { if (live()) callbacks.current.onRecognized?.(label, prob); },
+        error => { if (live()) callbacks.current.onError?.(error); });
+      sessionRef.current = session;
+      lastSentTimeRef.current = 0;
+      setState({ isConnected: false, framesSent: 0, lastError: null });
+      callbacks.current.onRecognized?.(null, 0);
 
-    return {
-        sendKeypoints,
-        state,
-        resetFrameCount,
+      ws.onopen = () => { if (live()) session.start(); };
+      ws.onmessage = event => {
+        if (!live()) return;
+        try { session.receive(JSON.parse(event.data)); }
+        catch { session.fail('인식 서버 응답을 처리하지 못했습니다.'); ws.close(); }
+      };
+      ws.onerror = () => {
+        if (live()) { session.fail('WebSocket 연결 오류'); ws.close(); }
+      };
+      ws.onclose = () => {
+        if (!live()) return;
+        clearTimeout(ackTimer);
+        session.fail('인식 서버 연결이 종료되었습니다. 다시 연결합니다.');
+        sessionRef.current = null;
+        wsRef.current = null;
+        reconnectTimer = setTimeout(connect, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 10000);
+      };
     };
+    try { connect(); }
+    catch (error) {
+      setState({ isConnected: false, framesSent: 0, lastError: 'WebSocket 주소 또는 연결 설정을 확인해주세요.' });
+      callbacks.current.onError?.(error instanceof Error ? error : new Error(String(error)));
+    }
+    return () => {
+      disposed = true;
+      clearTimeout(ackTimer);
+      clearTimeout(reconnectTimer);
+      if (current?.readyState === WebSocket.OPEN) {
+        try { sessionRef.current?.end(); } catch { /* BE disconnect cleanup is the fallback. */ }
+      }
+      current?.close();
+      if (wsRef.current === current) { wsRef.current = null; sessionRef.current = null; }
+    };
+  }, [enabled, serverUrl, recognitionTarget, connectionAttempt]);
+
+  const resetSession = useCallback(() => {
+    lastSentTimeRef.current = 0;
+    try {
+      if (wsRef.current?.readyState === WebSocket.OPEN && sessionRef.current?.reset()) return;
+      // A pending reset is already in progress; do not advance revision twice.
+      if (sessionRef.current?.phase === 'resetting' || sessionRef.current?.phase === 'starting') return;
+    } catch { /* Retry with a fresh server-owned session. */ }
+    setConnectionAttempt(value => value + 1);
+  }, []);
+
+  const sendKeypoints = useCallback((keypoints: number[][]) => {
+    if (!enabled || wsRef.current?.readyState !== WebSocket.OPEN) return;
+    const now = performance.now();
+    if (now - lastSentTimeRef.current < 1000 / targetFps) return;
+    try {
+      if (sessionRef.current?.frame(keypoints)) lastSentTimeRef.current = now;
+    } catch (error) {
+      sessionRef.current?.fail(error instanceof Error ? error.message : '키포인트 전송 실패');
+    }
+  }, [enabled, targetFps]);
+
+  return { sendKeypoints, state, resetSession };
 }

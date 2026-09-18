@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Holistic, Results } from '@mediapipe/holistic';
+import { Holistic } from '@mediapipe/holistic';
+import type { Results } from '@mediapipe/holistic';
 import { Camera } from '@mediapipe/camera_utils';
 
 export interface UseHolisticOptions {

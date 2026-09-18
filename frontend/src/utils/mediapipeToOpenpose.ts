@@ -145,8 +145,8 @@ function mediapipeToOpenPoseHands(
   if (leftHandLandmarks && leftHandLandmarks.length > 0) {
     leftHandLandmarks.forEach((p, i) => {
       if (i < 21) {
-        const x = isNaN(p.x) ? 0 : p.x;
-        const y = isNaN(p.y) ? 0 : p.y;
+        const x = p.x;
+        const y = p.y;
         const conf = p.visibility ?? 1.0;
         hands42[i] = [x, y, conf];
       }
@@ -157,8 +157,8 @@ function mediapipeToOpenPoseHands(
   if (rightHandLandmarks && rightHandLandmarks.length > 0) {
     rightHandLandmarks.forEach((p, i) => {
       if (i < 21) {
-        const x = isNaN(p.x) ? 0 : p.x;
-        const y = isNaN(p.y) ? 0 : p.y;
+        const x = p.x;
+        const y = p.y;
         const conf = p.visibility ?? 1.0;
         hands42[21 + i] = [x, y, conf];
       }

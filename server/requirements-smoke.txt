@@ -1,0 +1,10 @@
+# Minimal dependencies for ai_server.py + CPU ONNX live smoke checks.
+# Install CPU torch separately as documented in docs/LIVE_RECOGNITION_CHECK.md.
+# This does not replace requirements.txt for training/local MediaPipe workflows.
+Flask==3.1.2
+flask-sock==0.7.0
+simple-websocket==1.1.0
+numpy==1.24.4
+pandas==2.0.3
+PyYAML==6.0.3
+onnxruntime==1.23.2
