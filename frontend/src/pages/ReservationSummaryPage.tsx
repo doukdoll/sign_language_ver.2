@@ -13,14 +13,9 @@ export default function ReservationSummaryPage() {
     console.log("📝 SummaryPage 최종 수신 데이터:", state);
 
     const {
-        departureStation,
-        arrivalStation,
-        departureDate,
         passengers,
         selectedTrain1,
-        selectedTrain2,
-        seats1,
-        seats2
+        seats1
     } = state || {};
 
     const [showPopup, setShowPopup] = useState(false);

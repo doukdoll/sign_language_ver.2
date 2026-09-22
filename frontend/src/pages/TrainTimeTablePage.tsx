@@ -1,8 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../components/Header";
 import TrainRow from "../components/TrainCard";
 import instance from "../api/axios";
+
+// /train/search의 TrainInfoDto 중 이 화면에서 사용하는 필드입니다.
+interface TrainSchedule {
+    trainName: string;
+    trainNumber: string;
+    departureTime: string;
+    arrivalTime: string;
+    departureStation: string;
+    arrivalStation: string;
+    price: number | null;
+}
 
 export default function TrainTimeTablePage() {
 
@@ -23,12 +34,11 @@ export default function TrainTimeTablePage() {
     } = location.state || {};
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [trainSchedules, setTrainSchedules] = useState<any[]>([]);
+    const [trainSchedules, setTrainSchedules] = useState<TrainSchedule[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     // 🔹 공통 mock 데이터
-    const mockTrainData = [
+    const mockTrainData = useMemo<TrainSchedule[]>(() => [
         {
             trainName: "KTX",
             trainNumber: "101",
@@ -47,7 +57,7 @@ export default function TrainTimeTablePage() {
             arrivalStation,
             price: 42000,
         },
-    ];
+    ], [departureStation, arrivalStation]);
 
     const calculateDuration = (dep: string, arr: string) => {
         const start = new Date(dep).getTime();
@@ -63,7 +73,6 @@ export default function TrainTimeTablePage() {
 
             try {
                 setLoading(true);
-                setError(null);
 
                 // 🔹 필수 값 없으면 mock 데이터로 바로 UI 띄우기
                 if (!departureStation || !arrivalStation || !departureDate || departureHour === null) {
@@ -87,7 +96,7 @@ export default function TrainTimeTablePage() {
                     departureFrom: finalDateTime,
                 };
 
-                const response = await instance.get("/train/search", { params });
+                const response = await instance.get<TrainSchedule[]>("/train/search", { params });
 
                 // 🔹 서버가 빈 리스트 보내면 mock 사용
                 if (!response.data || response.data.length === 0) {
@@ -103,7 +112,6 @@ export default function TrainTimeTablePage() {
 
                 // 🔹 오류 발생 → mock 데이터 사용
                 setTrainSchedules(mockTrainData);
-                setError(null); // 에러 메시지 숨김
             } finally {
                 setLoading(false);
             }
@@ -119,6 +127,7 @@ export default function TrainTimeTablePage() {
         returnDate,
         returnHour,
         passengers,
+        mockTrainData,
     ]);
 
     const handleSelectTrain = (id: string) => {
@@ -217,7 +226,7 @@ export default function TrainTimeTablePage() {
                     <div className="mt-4 px-4 flex-1 overflow-hidden">
                         <div className="bg-white rounded-xl shadow-inner overflow-y-scroll no-scrollbar h-full p-2 pb-20">
 
-                            {trainSchedules.map((train: any) => {
+                            {trainSchedules.map((train) => {
                                 const uniqueId = train.trainNumber + train.departureTime + train.arrivalTime;
                                 return (
                                     <div key={uniqueId} className="mb-1">  

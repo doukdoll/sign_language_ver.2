@@ -127,7 +127,8 @@ GET /api/train/search
 | 명령 | 설명 |
 | --- | --- |
 | `npm run dev` | Vite 개발 서버 실행 |
-| `npm run build` | Vite 프로덕션 빌드 |
+| `npm run build` | TypeScript 검사 후 Vite 프로덕션 빌드 |
+| `npm run typecheck` | 앱·Vite 설정의 TypeScript 검사 |
 | `npm test` | Node.js 22.6+에서 카메라 없는 세션 규약 회귀 테스트 |
 | `npm run test:recognition:live` | 실행 중인 실제 BE·Python·ONNX에 합성 키포인트를 전송하는 연결 검사 |
 | `npm run lint` | ESLint 검사 |
@@ -162,17 +163,18 @@ src/
 - 백엔드 API 주소가 환경변수가 아닌 소스 코드에 고정되어 있습니다.
 - 시간표 API 실패가 mock 데이터로 숨겨져 연결 오류를 UI에서 알아보기 어렵습니다.
 - 결제와 좌석 재고는 프론트 전용 시뮬레이션입니다.
-- 일부 화면은 `any` 타입과 임시 콘솔 로그를 사용합니다.
+- 페이지 간 `location.state`와 API 응답은 런타임 스키마 검증을 하지 않으며, 일부 화면에 임시 콘솔 로그가 남아 있습니다.
 
 ## 현재 검증 결과
 
 실제 서버 연결 검증과 카메라 확인 절차는 [실행 기록](../docs/LIVE_RECOGNITION_CHECK.md)을 참고합니다. 합성 데이터 연결 성공은 인식 정확도 평가가 아닙니다.
 
-2026-09-17 기준으로 잠금 파일을 사용해 확인한 결과입니다.
+2026-09-22 기준으로 로컬에서 확인한 결과입니다.
 
-- `npm ci`: 성공. npm audit 기준 취약점 19개가 보고됩니다.
-- `npm run build`: 성공. 메인 JavaScript chunk가 500 kB를 넘어 분할 경고가 발생합니다.
+- `npm run lint -- --max-warnings 0`: 전체 프론트 오류 0개 / 경고 0개.
+- `npm run typecheck`: 성공. 기존 미사용 변수 타입 오류 11개를 정리했습니다.
+- `npm run build`: 타입 검사와 프로덕션 빌드 성공. 메인 JavaScript chunk가 500 kB를 넘어 분할 경고가 발생하며, 브라우저 호환성 데이터 갱신 안내가 남아 있습니다.
 - `npm test`: 세션 규약 테스트 8개 통과(Node.js 24).
-- 변경한 인식 경로의 ESLint 검사: 통과.
-- `npm run lint`: 기존 화면에 사용하지 않는 변수, `any` 타입, Hook dependency 등 16 errors / 4 warnings가 남아 있습니다.
-- `npx tsc -b`: 기존 CameraFeed·HomePage·ReservationSummaryPage·TrainTimeTablePage의 미사용 변수 오류 11개로 실패합니다.
+- 이번 정리 후 실제 카메라 화면과 결제 완료·취소 흐름의 수동 검증은 아직 수행하지 않았습니다. 세션 규약 테스트는 이 UI 동작을 검증하지 않습니다.
+
+의존성 설치·보안 검사는 이번 작업에서 다시 실행하지 않았습니다. 이전 2026-09-17 검사에서는 `npm ci`가 성공했고 npm audit 취약점 19개가 보고됐습니다.
