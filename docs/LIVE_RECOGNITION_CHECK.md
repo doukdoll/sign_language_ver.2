@@ -21,6 +21,12 @@
 첫 단절 검증 시도는 로컬 프로세스 종료 명령 오류로 제한 시간을 넘겼다.
 프로세스를 확인하고 종료한 재실행에서는 단절 검증이 통과했다.
 
+### 이후 확인 기록 (2026-09-22 문서 갱신)
+
+- [PR #15](https://github.com/doukdoll/sign_language_ver.2/pull/15) 병합 전 소유자가 브라우저 카메라 확인 완료를 알렸다. 자동 합성 입력 테스트와 별개의 사용자 확인 기록이며, 항목별 측정 로그나 정확도 수치는 없다.
+- [PR #17](https://github.com/doukdoll/sign_language_ver.2/pull/17)에서 카메라 스트림 종료와 결제 타이머 정리를 수정했다. 이 변경 이후 카메라·결제 UI의 수동 재검증은 기록되지 않았다.
+- [CI](CI.md)에서 FE·BE·AI 모델 없는 테스트 및 FE·BE 빌드가 통과했다. CI는 아래 live ONNX·카메라 검사를 실행하지 않는다.
+
 ## 검증 환경
 
 | 항목 | 값 |
@@ -43,7 +49,7 @@ requirements-smoke.txt는 직접 의존성 목록이며 전체 전이 의존성 
 
 ## 재현 방법 (PowerShell)
 
-Python 3.10, JDK 17, Gradle 8.14.4, Node.js 22.6 이상을 준비한다.
+Python 3.10, JDK 17, Gradle 8.14.4, Node.js 24를 준비한다.
 현재 저장소에는 Gradle wrapper JAR가 없으므로 설치된 Gradle을 사용한다.
 
 AI 환경 준비 — 저장소 루트:
@@ -87,7 +93,7 @@ npm run test:recognition:live
 - 만료 검증: 별도 AI 테스트 프로세스에서 app.run 전에 `ai_server.realtime_config['session_idle_timeout'] = 3.0`을 설정하고 `npm run test:recognition:live -- --expect-expiry`를 실행한다. 끝나면 그 프로세스를 종료하고 기본 설정으로 다시 실행한다. 저장소 YAML은 변경하지 않는다.
 - 기본 `npm test`는 서버가 필요 없는 단위 테스트이며 live 테스트와 분리돼 있다.
 
-## 사용자가 확인할 카메라 단계
+## 카메라 수동 재검증 단계
 
 ```powershell
 cd frontend
@@ -103,4 +109,4 @@ npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 
 한 카메라의 여러 탭 동시 사용은 브라우저·장치에 따라 제한될 수 있다.
 사용자 간 서버 격리는 위 합성 데이터 테스트로 별도 확인했다.
-이 단계가 끝나기 전에는 카메라 포함 E2E 검증 완료로 표시하지 않는다.
+코드 변경 후에는 필요한 항목을 다시 확인하고 확인자·커밋·실행 환경을 기록한다. 이전 소유자 확인이나 합성 입력 테스트만으로 현재 커밋의 모든 카메라 E2E 항목이 검증됐다고 표시하지 않는다.

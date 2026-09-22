@@ -21,11 +21,11 @@ MediaPipe/OpenPose 순서의 키포인트를 전처리하고 ONNX 모델로 기�
 기본 Attention 모델은 12개 클래스를 가집니다.
 
 ```text
-경주, 광명, 대구, 대전, 서울역, 수원,
+경주, 광명, 대구, 대전, 서울, 수원,
 아산, 영등포, 울산, 천안, 포항, <unk>
 ```
 
-모델의 검증 지표와 구조는 [deployment README](deployment/README.md)와 각 모델 폴더의 `deployment_info.yaml`에서 확인할 수 있습니다.
+위 목록은 실제 Attention `vocabulary.txt` 기준입니다. 메타데이터와 GRU 어휘에는 `서울역`으로 기록되어 있어 표기가 다릅니다. 모델의 기존 검증 지표와 구조는 [deployment README](deployment/README.md)와 각 모델 폴더의 `deployment_info.yaml`에서 확인할 수 있습니다.
 
 ## 요구 사항
 
@@ -33,6 +33,7 @@ MediaPipe/OpenPose 순서의 키포인트를 전처리하고 ONNX 모델로 기�
 - 서비스 모드만 실행할 때는 카메라가 필요하지 않습니다.
 - 로컬 카메라 모드와 카메라 테스트에는 카메라 접근 권한이 필요합니다.
 - CUDA가 없어도 ONNX Runtime CPU provider로 실행할 수 있습니다.
+- `requirements.txt`는 headless OpenCV를 포함하므로 `app.py`의 OpenCV 창을 사용하려면 별도의 GUI 지원 환경이 필요합니다. 서비스 전용 CPU 설치는 [실행 기록](../docs/LIVE_RECOGNITION_CHECK.md)을 참고합니다.
 
 ## 설치
 
@@ -46,15 +47,20 @@ Windows PowerShell:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+python -m pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements-smoke.txt
+python -m pip check
 ```
 
-macOS/Linux:
+위 조합은 Windows/Python 3.10에서 실제 CPU ONNX 연결 스모크에 사용한 서비스 전용 환경입니다. MediaPipe 카메라·학습·오프라인 전처리 패키지는 포함하지 않습니다. OS별 CPU PyTorch wheel 지원 여부는 별도로 확인해야 하며 다른 플랫폼에서 같은 설치를 검증한 것은 아닙니다.
+
+기존 전체 의존성이 필요한 개발 환경에서는 별도 가상환경에 다음 파일을 사용할 수 있습니다. 전체 패키지 조합의 새 설치·학습 실행은 최근 CI와 서비스 스모크의 검증 범위가 아닙니다.
 
 ```bash
-source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
+
+macOS/Linux 가상환경 활성화 명령은 `source .venv/bin/activate`입니다.
 
 ## Flask 추론 서버 실행
 
@@ -71,14 +77,12 @@ POST /predict_keypoints
 Content-Type: application/json
 ```
 
-요청은 `keypointData` 아래에 한 프레임의 키포인트를 전달합니다.
+요청은 `keypointData` 아래에 한 프레임의 키포인트 137개를 전달합니다. 다음 코드는 요청 구조를 생성하는 예시이며, 모든 점이 동일한 합성 입력은 정확도 검증용이 아닙니다.
 
-```json
-{
-  "recognitionTarget": "DEPARTURE",
-  "keypointData": {
-    "keypoints": [[0.0, 0.0]]
-  }
+```python
+payload = {
+    "recognitionTarget": "DEPARTURE",
+    "keypointData": {"keypoints": [[0.5, 0.5, 1.0] for _ in range(137)]},
 }
 ```
 
@@ -87,13 +91,13 @@ Content-Type: application/json
 - `{ "keypoints": [...] }`
 - `{ "body": [...], "face": [...], "leftHand": [...], "rightHand": [...] }`
 
-HTTP 요청은 한 프레임을 전처리한 뒤 마지막 프레임을 복제해 모델 입력 길이를 채웁니다. 동작 시퀀스 전체를 사용하는 방식이 아니므로 실시간 WebSocket 추론과 결과 특성이 다를 수 있습니다.
+HTTP 요청은 한 프레임을 전처리한 뒤 같은 프레임을 128개로 복제하고, ONNX 서비스에서 나머지 52프레임을 0으로 채웁니다. 동작 시퀀스 전체를 사용하는 방식이 아니므로 실시간 WebSocket 추론과 결과 특성이 다를 수 있습니다.
 
 성공 응답:
 
 ```json
 {
-  "departureCity": "서울역",
+  "departureCity": "서울",
   "arrivalCity": null,
   "recognizedProb": 98.7
 }
@@ -112,7 +116,7 @@ HTTP 요청은 한 프레임을 전처리한 뒤 마지막 프레임을 복제�
 - 유휴 만료는 realtime.session_idle_timeout(기본 120초)로 설정합니다.
 - 기존 128프레임 버퍼와 5프레임 추론 간격, 모델 내부 180프레임 padding 정책은 유지합니다.
 
-모델 없이 실행하는 세션 회귀 테스트: `python -m unittest tests.test_sessions -v`
+모델 없이 실행하는 세션 회귀 테스트: `python -S -m unittest tests.test_sessions -v`
 
 실제 CPU ONNX 연결 검증 환경과 최소 의존성 설치 방법은 [실행 기록](../docs/LIVE_RECOGNITION_CHECK.md)을 참고합니다.
 
@@ -127,9 +131,9 @@ HTTP 요청은 한 프레임을 전처리한 뒤 마지막 프레임을 복제�
 | Left hand | 95~115 | 21 |
 | Right hand | 116~136 | 21 |
 
-입력 `[137, 2]`는 다음 과정을 거쳐 274차원 특징 벡터가 됩니다.
+WebSocket 입력은 `[137, 3]`이며 다음 과정을 거쳐 274차원 특징 벡터가 됩니다. HTTP의 기존 `[137, 2]` 입력은 confidence를 0으로 보충하므로 confidence가 있는 입력과 전처리 결과가 다를 수 있습니다.
 
-1. confidence가 없는 점에 세 번째 좌표를 추가합니다.
+1. `[x, y, confidence]`를 읽습니다. HTTP에서 confidence가 없으면 0을 추가합니다.
 2. 신체 부위별 정규화를 적용합니다.
 3. 코 좌표를 기준으로 Pose 상대 좌표를 계산합니다.
 4. NaN과 무한값을 0으로 바꿉니다.
@@ -144,6 +148,8 @@ python app.py
 `config/realtime_config.yaml`을 읽어 카메라, 모델, 세그멘터, 로깅 옵션을 구성합니다. `q` 키로 종료합니다.
 
 주요 설정:
+
+아래는 YAML에 저장된 값입니다. 현재 `app.py` 경로도 ONNX 모드에서는 `realtime/app_main.py`가 버퍼를 128로 고정하므로 `window_size: 180`을 읽어 180프레임을 수집하는 것은 아닙니다. 모델 입력은 별도 0 padding을 통해 180프레임이 됩니다.
 
 ```yaml
 model:
@@ -164,7 +170,7 @@ docker build -t sign-language-ai .
 docker run --rm -p 5001:5001 sign-language-ai
 ```
 
-Docker 이미지는 Python 3.10 slim을 사용하고 `ai_server.py`를 실행합니다. 현재 requirements는 CPU용 `onnxruntime`을 설치하므로 CUDA provider를 사용하려면 별도 이미지 구성이 필요합니다.
+Docker 이미지는 Python 3.10 slim과 기존 전체 `requirements.txt`를 사용하고 `ai_server.py`를 실행합니다. 이미지 빌드는 현재 CI의 검증 범위가 아닙니다. 현재 requirements는 CPU용 `onnxruntime`을 설치하므로 CUDA provider를 사용하려면 별도 이미지 구성이 필요합니다.
 
 ## 프로젝트 구조
 
@@ -177,9 +183,9 @@ server/
 ├── config/                   # 실시간·테스트 YAML 설정
 ├── deployment/               # ONNX 모델, 어휘, 메타데이터
 ├── input_keypoint/           # 변환, 정규화, 손 필터, 검증
-├── realtime/                 # 로컬 실시간 추론과 세그멘터
+├── realtime/                 # WebSocket 세션 관리, 로컬 추론, 세그멘터
 ├── signjoey/                 # 모델 학습·평가 코드
-├── tests/                    # 샘플·카메라 추론 테스트
+├── tests/                    # 모델 없는 세션 회귀 테스트, 수동 추론 도구
 └── utils/                    # 설정, 로깅, 성능, 예외 처리
 ```
 
@@ -187,7 +193,15 @@ server/
 
 ## 테스트
 
-테스트 도구 사용법은 [tests/INFERENCE_TEST_README.md](tests/INFERENCE_TEST_README.md)를 참고합니다.
+`server` 디렉터리에서 실행합니다. Python 3.10 표준 라이브러리만 사용하는 세션 회귀 테스트 15개는 모델·카메라·pip 설치가 필요하지 않습니다.
+
+```bash
+python -S -m unittest tests.test_sessions -v
+```
+
+[GitHub Actions CI](../.github/workflows/ci.yml)는 `develop` 대상 PR과 `develop` push에서 이 테스트를 실행합니다. CI 범위와 재현 명령은 [CI 가이드](../docs/CI.md)를 참고합니다. 실제 ONNX 추론·카메라·정확도 검증은 CI에 포함되지 않습니다.
+
+아래 수동 테스트 도구는 모델 및 관련 의존성이 필요합니다. 사용법은 [tests/INFERENCE_TEST_README.md](tests/INFERENCE_TEST_README.md)를 참고합니다.
 
 ```bash
 python -m tests.test_realtime_inference --sample-only
