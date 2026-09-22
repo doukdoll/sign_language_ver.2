@@ -1,20 +1,16 @@
 import Header from "../components/Header";
 import DatePicker from "react-datepicker";
-import { setDateTime } from "../api/axios";
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import "react-datepicker/dist/react-datepicker.css";
 import { ko } from "date-fns/locale/ko";
 import "../styles/calendar.css";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { hasTravelSelection, readReservationState } from "../utils/reservation";
 
 export default function DateTimePage() {
 
     const location = useLocation();
-    console.log("📝 DateTimePage received state:", location.state);
-
-    // [수정 1] passengers(탑승 인원) 추가로 꺼내기
-    const { departureStation, arrivalStation, tripType, passengers } = location.state || {};
+    const reservation = readReservationState(location.state);
 
     const [step, setStep] = useState<"departure" | "return">("departure");
 
@@ -28,96 +24,31 @@ export default function DateTimePage() {
 
     const hours = Array.from({ length: 24 }, (_, i) => i);
 
-    // 로그
-    useEffect(() => console.log("🚆 가는 날짜:", departureDate), [departureDate]);
-    useEffect(() => console.log("⏰ 가는 시간:", departureHour), [departureHour]);
-    useEffect(() => console.log("🔄 오는 날짜:", returnDate), [returnDate]);
-    useEffect(() => console.log("🔂 오는 시간:", returnHour), [returnHour]);
-    // 데이터 확인용 로그 추가
-    useEffect(() => console.log("👥 탑승 인원:", passengers), [passengers]);
-
     const navigate = useNavigate();
-
-    const formatDate = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-    };
+    if (!hasTravelSelection(reservation) || reservation.tripType === 'round2') return <Navigate to="/" replace />;
 
     const handleNext = () => {
-        if (tripType === "one-way") {
-            console.log("편도 선택");
-            handleRequestOneWay();
+        if (departureHour === null) return alert("출발 시간을 선택해주세요.");
+        if (reservation.tripType === "one-way") {
+            navigate("/timetable", { state: { ...reservation, departureDate, departureHour } });
             return;
         }
+        setReturnDate(current => current ?? departureDate);
         setStep("return");
     };
 
-    // ✅ [수정] 편도 요청 처리
-    const handleRequestOneWay = async () => {
-        if (departureHour === null) return alert("출발 시간을 선택해주세요.");
-
-        const depDate = formatDate(departureDate);
-        const depTime = `${String(departureHour).padStart(2, "0")}:00`;
-
-        const sendData = `${depDate} ${depTime}`;
-        console.log("📤 편도 데이터 전송:", sendData);
-
-        try {
-            const res = await setDateTime(sendData);
-            console.log("📥 datetime 응답:", res);
-
-            navigate("/timetable", {
-                state: {
-                    departureStation,
-                    arrivalStation,
-                    tripType,
-                    passengers, // [수정 2] 다음 페이지로 인원수 전달
-                    departureDate,
-                    departureHour,
-                },
-            });
-        } catch (err) {
-            console.error("편도 datetime 전송 실패:", err);
-            alert("오류가 발생했습니다.");
-        }
-    };
-
-    // ✅ [수정] 왕복 요청 처리
-    const handleSearchTrain = async () => {
-        if (departureHour === null || returnHour === null)
+    const handleSearchTrain = () => {
+        if (departureHour === null || returnDate === null || returnHour === null)
             return alert("모든 시간 정보를 선택해주세요.");
-
-        const depDate = formatDate(departureDate);
-        const depTime = `${String(departureHour).padStart(2, "0")}:00`;
-
-        const retDate = returnDate ? formatDate(returnDate) : null;
-        const retTime = `${String(returnHour).padStart(2, "0")}:00`;
-
-        const sendData = `${depDate} ${depTime} | ${retDate} ${retTime}`;
-        console.log("📤 왕복 데이터 전송:", sendData);
-
-        try {
-            const res = await setDateTime(sendData);
-            console.log("📥 datetime 응답:", res);
-
-            navigate("/timetable", {
-                state: {
-                    departureStation,
-                    arrivalStation,
-                    tripType,
-                    passengers, // [수정 3] 다음 페이지로 인원수 전달
-                    departureDate,
-                    departureHour,
-                    returnDate,
-                    returnHour,
-                },
-            });
-        } catch (err) {
-            console.error("왕복 datetime 전송 실패:", err);
-            alert("오류가 발생했습니다.");
+        const departure = new Date(departureDate);
+        departure.setHours(departureHour, 0, 0, 0);
+        const returning = new Date(returnDate);
+        returning.setHours(returnHour, 0, 0, 0);
+        if (returning < departure) {
+            alert("돌아오는 시간은 출발 시간 이후로 선택해주세요.");
+            return;
         }
+        navigate("/timetable", { state: { ...reservation, departureDate, departureHour, returnDate, returnHour } });
     };
 
 
@@ -142,8 +73,9 @@ export default function DateTimePage() {
                         dateFormat="yyyy.MM.dd"
                         selected={step === "departure" ? departureDate : returnDate}
                         onChange={(d) => {
-                            if (step === "departure") setDepartureDate(d!);
-                            else setReturnDate(d!);
+                            if (!d) return;
+                            if (step === "departure") setDepartureDate(d);
+                            else setReturnDate(d);
                         }}
                         filterDate={(date) => {
                             const today = new Date();

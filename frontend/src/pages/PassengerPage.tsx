@@ -1,49 +1,19 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // 1. useLocation 추가
-import { setPassengers } from "../api/axios";
+import { useState } from "react";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import Header from "../components/Header";
+import { readReservationState } from "../utils/reservation";
 
 export default function PassengerPage() {
     const navigate = useNavigate();
-    const location = useLocation(); // 2. location 훅 사용
-
-    // 3. 전달받은 state에서 출발역, 도착역 꺼내기
-    const { departureStation, arrivalStation } = location.state || {};
+    const location = useLocation();
+    const reservation = readReservationState(location.state);
 
     const [count, setCount] = useState<number | null>(null);
-    const [loading, setLoading] = useState(false);
+    if (!reservation) return <Navigate to="/" replace />;
 
-    // 4. 데이터가 잘 넘어왔는지 확인 (개발용 콘솔)
-    useEffect(() => {
-        console.log("전달받은 출발역:", departureStation);
-        console.log("전달받은 도착역:", arrivalStation);
-    }, [departureStation, arrivalStation]);
-
-    const handleNext = async () => {
+    const handleNext = () => {
         if (count === null) return alert("탑승 인원을 선택해주세요.");
-
-        try {
-            setLoading(true);
-
-            const res = await setPassengers(count);
-            console.log("서버 응답:", res);
-
-            // 성공 시 다음 페이지로 이동
-            navigate("/triptype", {
-                state: {
-                    passengers: count,
-                    // 5. 다음 페이지로 이동할 때도 출발역/도착역 정보를 유지하며 넘겨줌
-                    departureStation: departureStation,
-                    arrivalStation: arrivalStation
-                }
-            });
-
-        } catch (error) {
-            console.error("탑승 인원 전송 실패:", error);
-            alert("오류가 발생했습니다. 다시 시도해주세요.");
-        } finally {
-            setLoading(false);
-        }
+        navigate("/triptype", { state: { ...reservation, passengers: count } });
     };
 
     const passengerOptions = [1, 2, 3, 4, 5];
@@ -56,12 +26,6 @@ export default function PassengerPage() {
 
                 <main className="flex flex-col items-center mt-10 px-6">
 
-                    {/* (선택사항) 사용자가 현재 경로를 확인할 수 있게 UI에 표시하고 싶다면 주석 해제 */}
-                    {/* <div className="mb-4 text-sm text-gray-500">
-             경로: {departureStation} ➔ {arrivalStation}
-          </div>
-          */}
-
                     <p className="text-xl font-bold mb-4">탑승 인원을 선택해주세요.</p>
                     <p className="text-slate-600 mb-6">큰 버튼을 눌러 인원을 선택할 수 있어요.</p>
 
@@ -71,14 +35,12 @@ export default function PassengerPage() {
                             <button
                                 key={num}
                                 onClick={() => setCount(num)}
-                                disabled={loading}
                                 className={`w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-bold border 
                   ${
                                     count === num
                                         ? "bg-blue-600 text-white border-blue-700"
                                         : "bg-white text-slate-700 border-slate-300"
                                 }
-                  ${loading ? "opacity-50 cursor-not-allowed" : ""}
                 `}
                             >
                                 {num}
@@ -98,10 +60,10 @@ export default function PassengerPage() {
                     {/* 다음 버튼 */}
                     <button
                         onClick={handleNext}
-                        disabled={loading}
+                        disabled={count === null}
                         className="mt-10 px-8 py-4 bg-blue-600 text-white text-lg font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? "전송 중..." : "다음"}
+                        다음
                     </button>
                 </main>
             </div>

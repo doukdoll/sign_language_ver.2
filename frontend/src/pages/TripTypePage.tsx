@@ -1,34 +1,18 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import Header from "../components/Header";
-import { setTripType } from "../api/axios";
+import { readReservationState } from "../utils/reservation";
 
 export default function TripTypePage() {
 
     const navigate = useNavigate();
     const location = useLocation();
 
-    // [수정 1] passengers(탑승 인원)도 함께 구조 분해 할당으로 가져옵니다.
-    const { departureStation, arrivalStation, passengers } = location.state || {};
+    const reservation = readReservationState(location.state);
+    if (!reservation?.passengers) return <Navigate to="/" replace />;
+    const { departureStation, arrivalStation, passengers } = reservation;
 
-    const handleStart = async (type: "one-way" | "round") => {
-        try {
-            const res = await setTripType(type);
-            console.log("triptype 응답:", res);
-
-            // [수정 2] 다음 페이지로 갈 때 passengers 정보도 같이 넘겨줍니다.
-            navigate("/datetime", {
-                state: {
-                    departureStation,
-                    arrivalStation,
-                    passengers, // 인원수 유지
-                    tripType: type
-                },
-            });
-
-        } catch (error) {
-            console.error("triptype 전송 실패:", error);
-            alert("오류가 발생했습니다. 다시 시도해주세요.");
-        }
+    const handleStart = (type: "one-way" | "round") => {
+        navigate("/datetime", { state: { ...reservation, tripType: type } });
     };
 
     return (
@@ -68,7 +52,6 @@ export default function TripTypePage() {
                     <p className="text-sm text-gray-700 mt-1">
                         <span className="font-semibold text-gray-900">도착역:</span> {arrivalStation || "정보 없음"}
                     </p>
-                    {/* [수정 3] 인원수 표시 추가 */}
                     <p className="text-sm text-gray-700 mt-1">
                         <span className="font-semibold text-gray-900">탑승 인원:</span> {passengers ? `${passengers}명` : "정보 없음"}
                     </p>
