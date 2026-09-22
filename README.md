@@ -155,6 +155,8 @@ docker compose up --build
 
 ## 검증 명령
 
+`develop` 대상 PR과 `develop` push에서 FE·BE·AI 세션 검사를 실행하도록 [GitHub Actions CI](docs/CI.md)를 구성했습니다. 실제 모델·카메라 검증은 별도입니다.
+
 ```bash
 cd frontend
 npm run lint
