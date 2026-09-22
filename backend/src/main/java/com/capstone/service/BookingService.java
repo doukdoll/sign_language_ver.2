@@ -9,6 +9,8 @@ import com.capstone.repository.TrainScheduleRepository;
 import com.capstone.util.QrGenerator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -31,28 +33,28 @@ public class BookingService {
 
     @Transactional
     public TicketDto createBookingAndTicket(BookingRequestDto request) {
-        // 1. 열차 스케줄 유효성 검사 및 조회 (더미 또는 실제 로직)
-        // 실제 구현에서는 request의 trainNumber, departureTime, arrivalTime 등으로 TrainSchedule을 조회해야 합니다.
-        // 여기서는 간단화를 위해 더미 스케줄을 사용하거나, 실제 DB에서 조회하는 로직을 추가해야 합니다.
-        TrainSchedule trainSchedule = trainScheduleRepository.findByTrainNumberAndDepartureTimeAndArrivalTime(
-                        request.getTrainNumber(), request.getDepartureTime(), request.getArrivalTime())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid train schedule"));
+        // Match the complete requested journey before creating a demo ticket.
+        TrainSchedule trainSchedule = trainScheduleRepository
+                .findByTrainNumberAndDepartureStationAndArrivalStationAndDepartureTimeAndArrivalTime(
+                        request.getTrainNumber(), request.getDepartureStation(), request.getArrivalStation(),
+                        request.getDepartureTime(), request.getArrivalTime())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid train schedule"));
 
         // 2. 좌석 할당 (현재는 더미, 실제로는 복잡한 좌석 관리 로직 필요)
         String seatNumber = "12호차 34A석"; // 더미 좌석 번호
 
         // 3. QR 코드 데이터 생성
         String bookingId = UUID.randomUUID().toString();
-        String qrCodeData = qrGenerator.generateQrCodeData(bookingId, request.getTrainNumber());
+        String qrCodeData = qrGenerator.generateQrCodeData(bookingId, trainSchedule.getTrainNumber());
 
         // 4. Booking 엔티티 생성 및 저장
         Booking booking = Booking.builder()
                 .bookingId(bookingId)
-                .trainNumber(request.getTrainNumber())
-                .departureStation(request.getDepartureStation())
-                .arrivalStation(request.getArrivalStation())
-                .departureTime(request.getDepartureTime())
-                .arrivalTime(request.getArrivalTime())
+                .trainNumber(trainSchedule.getTrainNumber())
+                .departureStation(trainSchedule.getDepartureStation())
+                .arrivalStation(trainSchedule.getArrivalStation())
+                .departureTime(trainSchedule.getDepartureTime())
+                .arrivalTime(trainSchedule.getArrivalTime())
                 .passengers(request.getPassengers())
                 .seatType(request.getSeatType())
                 .seatNumber(seatNumber)

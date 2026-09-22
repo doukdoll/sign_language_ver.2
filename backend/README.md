@@ -19,7 +19,7 @@
 | --- | --- | --- |
 | 열차 데이터 초기화 | 구현 | 경부선 상·하행 CSV를 읽어 오늘부터 한 달 뒤까지의 운행 데이터를 생성합니다. |
 | 열차 검색 | 구현 | 출발역, 도착역, 출발 시간 조건으로 H2/MySQL을 조회합니다. |
-| 예매 생성 | 구현 | 열차 스케줄을 확인하고 예매 정보와 QR용 문자열을 저장합니다. |
+| 예매 생성 | 구현 | 열차 번호·출발/도착역·출발/도착 시각을 모두 확인하고 예매 정보와 QR용 문자열을 저장합니다. |
 | 실시간 수어 중계 | 구현 | WebSocket 규약 v1에 따라 세션 소유권·ACK·revision을 검증하고 AI 응답을 소유 FE에만 전달합니다. |
 | 수어 REST API | 임시 구현 | 도시·날짜·인원·여정·좌석 등급 응답은 현재 고정값입니다. |
 | 결제 API | 미구현 | 컨트롤러와 서비스만 있고 엔드포인트는 없습니다. |
@@ -98,7 +98,7 @@ GET /api/train/search
 GET /api/train/search?departure=서울&destination=부산&departureFrom=2026-09-17%2009:00
 ```
 
-검색 범위는 `departureFrom`이 속한 날짜의 다음 날 00:00 이전까지입니다. 응답의 좌석 수, 좌석 등급, 가격, 상태는 현재 임시값으로 생성됩니다.
+검색 범위는 `departureFrom`이 속한 날짜의 다음 날 00:00 이전까지입니다. 응답의 `price`는 예매와 동일한 DB 스케줄 가격을 사용합니다. CSV 초기 적재 시 가격은 현재 30,000원으로 지정되므로 실제 운임은 아닙니다. 좌석 수 50, 좌석 등급 `STANDARD`, 상태 `available`은 고정된 임시값입니다.
 
 출발역과 도착역을 모두 지정한 경우 한쪽의 `대구`를 동대구·서대구로 확장합니다. 도착역 조건을 먼저 처리하므로 양쪽 모두 `대구`인 경우나 역 조건을 하나만 보낸 경우에는 일반적인 별칭 정규화가 적용되지 않습니다.
 
@@ -125,7 +125,16 @@ Content-Type: application/json
 }
 ```
 
-`trainNumber`, `departureTime`, `arrivalTime`이 DB의 스케줄과 정확히 일치해야 합니다. 좌석 번호는 현재 `12호차 34A석`으로 고정되며 실제 좌석 재고를 차감하지 않습니다.
+위 요청은 형식 예시입니다. `trainNumber`, `departureStation`, `arrivalStation`, `departureTime`, `arrivalTime`이 모두 DB의 동일한 스케줄과 정확히 일치해야 하며, 일치하지 않으면 HTTP 400을 반환하고 저장하지 않습니다. 역과 시각은 검색 응답의 값을 사용하세요.
+
+`tripType`을 포함한 문자열 필드는 필수이며 공백만 보낼 수 없습니다. 승객 수는 1~9명이고 출발·도착 시각도 필수입니다. 성공하면 HTTP 201과 티켓을 반환하며, 티켓 금액은 검색 결과의 DB 가격 × 승객 수입니다. 좌석 번호는 현재 `12호차 34A석`으로 고정되며 실제 결제 승인이나 좌석 재고 차감은 없습니다.
+
+### 요청 오류 처리
+
+- 필수값·승객 수 검증 실패: HTTP 400과 필드별 오류 메시지 객체.
+- 잘못된 JSON 또는 날짜 형식: HTTP 400과 `Invalid request`.
+- 일치하는 예매 구간 없음: HTTP 400과 `Invalid train schedule`.
+- 예상치 못한 서버 오류: HTTP 500과 `An unexpected error occurred`. 내부 예외 상세는 서버 로그에만 기록합니다.
 
 ### 수어 입력용 REST API
 
@@ -191,8 +200,10 @@ src/main/java/com/capstone/
 ├── handler/        # Frontend/AI WebSocket 핸들러
 ├── repository/     # JPA repository
 ├── service/        # 열차, 예매, 수어, 데이터 적재 로직
-└── util/           # JSON, QR 문자열 유틸리티
+└── util/           # QR 문자열 유틸리티
 ```
+
+실행용 설정과 CSV는 `src/main/resources/`에 있습니다. 사용되지 않던 Java 소스 경로 아래 리소스 사본, 구 `MyWebSocketHandler`, 빈 `JsonParser`, 미사용 `SlotDataDto`는 제거했습니다. 현재 WebSocket 진입점은 `PredictionClientHandler`이며 세션 중계는 `InferenceClientHandler`가 담당합니다.
 
 ## 테스트와 빌드
 
@@ -203,11 +214,19 @@ gradle test
 gradle --no-daemon --console=plain clean build
 ```
 
-현재 테스트는 16개입니다. `InferenceClientHandlerTest` 12개는 ID 위조, 응답 라우팅, RESET, 연결 종료/만료, 동시 쓰기를 검사합니다.
+현재 테스트는 26개입니다. `InferenceClientHandlerTest` 12개는 ID 위조, 응답 라우팅, RESET, 연결 종료/만료, 동시 쓰기를 검사합니다.
 
 `WebSocketRelayIntegrationTest` 1개는 임의 로컬 포트에서 실제 FE WebSocket 두 개와 공유 AI 연결을 열어 중계를 검증합니다. AI는 결정적 응답을 반환하는 모의 서버이며 모델 추론을 수행하지 않습니다. `SignLanguageServiceIntegrateTest` 3개는 MockRestServiceServer로 기존 HTTP 서비스의 요청 형식과 오류 응답을 검사합니다.
 
+`BookingServiceTest` 2개와 `KorailServiceTest` 1개는 예매 구간 검증·저장 금액·검색 가격을 검사합니다. `TrainScheduleRepositoryTest` 1개는 H2에서 두 역과 두 시각을 모두 대조하는 조회를 검증합니다. `ApiValidationTest` 6개는 잘못된 구간·필수값·인원·JSON·날짜 요청의 400 응답과 서버 오류 정보 비노출을 검사합니다.
+
 [GitHub Actions CI](../.github/workflows/ci.yml)는 `develop` 대상 PR과 `develop` push에서 Java 17·Gradle 8.14.4로 `clean build`를 실행합니다. 테스트 보고서는 `backend-test-reports` 아티팩트로 최대 7일 보관합니다. 실제 Python·ONNX·카메라 검증은 CI와 별개이며 [실시간 연동 검증 문서](../docs/LIVE_RECOGNITION_CHECK.md)를 참고하세요.
+
+### Docker 빌드 산출물
+
+`Dockerfile`의 빌드 단계는 `gradle bootJar --no-daemon`으로 실행용 JAR만 생성합니다. `gradle build`가 실행용 JAR과 `-plain.jar`를 함께 생성하여 `COPY /app/build/libs/*.jar app.jar`가 실패하는 문제를 피하기 위한 구성입니다.
+
+2026-09-22 로컬에서 `gradle --no-daemon --console=plain clean test bootJar`로 26개 테스트 통과와 `build/libs/`의 실행용 JAR 1개 생성을 확인했습니다. 실제 Docker 이미지 빌드·컨테이너 실행은 검증하지 않았으며, Compose의 AI 이미지 제한 사항은 [루트 README](../README.md)를 참고하세요.
 
 ## 현재 제한 사항
 
