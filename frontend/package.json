@@ -13,7 +13,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/holistic": "^0.5.1675471629",
     "@tailwindcss/vite": "^4.1.14",
     "@types/react-datepicker": "^6.2.0",
@@ -21,8 +20,7 @@
     "react": "^19.1.1",
     "react-datepicker": "^8.9.0",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.4",
-    "react-webcam": "^7.2.0"
+    "react-router-dom": "^7.9.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
