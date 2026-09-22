@@ -1,5 +1,17 @@
 # 추론 테스트
 
+## 자동 세션 회귀 테스트
+
+`server` 디렉터리에서 Python 3.10으로 실행합니다. `test_sessions.py`의 15개 테스트는 모델·카메라·외부 Python 패키지 없이 세션 소유권 분리, START/RESET/END, 프레임 검증, 만료·연결 종료 처리를 확인합니다.
+
+```bash
+python -S -m unittest tests.test_sessions -v
+```
+
+[CI](../../.github/workflows/ci.yml)의 AI 작업도 이 명령을 사용합니다. 실제 ONNX 연결은 [별도 스모크 검증](../../docs/LIVE_RECOGNITION_CHECK.md) 대상이며 CI에서 모델 정확도나 카메라 동작을 검증하지는 않습니다.
+
+## 수동 추론 도구
+
 `test_realtime_inference.py`는 배포 모델을 가상 입력 또는 로컬 카메라 입력으로 확인하는 수동 테스트 도구입니다. pytest 테스트가 아니라 직접 실행하는 CLI 프로그램입니다.
 
 ## 제공 모드
@@ -47,6 +59,8 @@ python -m tests.test_realtime_inference --realtime-only
 ```
 
 프로그램은 설정된 카메라 인덱스 `[0, 1, 2]`를 순서대로 시도합니다. OpenCV 창에서 `q` 키를 누르면 종료됩니다.
+
+기본 `requirements.txt`에는 headless OpenCV가 포함되어 있습니다. 이 도구의 창을 띄우려면 GUI를 지원하는 별도 로컬 OpenCV 환경이 필요하며, 서비스용 최소 의존성만으로는 MediaPipe 카메라 도구를 실행할 수 없습니다.
 
 ### 전체 테스트
 
@@ -163,7 +177,7 @@ deployment/20251109-1439_Attention/vocabulary.txt
 
 기본 requirements는 CPU provider를 사용합니다. CUDA를 지정하려면 CUDA 버전과 호환되는 `onnxruntime-gpu` 환경을 별도로 구성해야 합니다.
 
-## 한계
+## 수동 추론 도구의 한계
 
 - 자동 assertion이나 합격 기준이 없는 수동 진단 도구입니다.
 - random/zero 입력 결과는 정확도 검증이 아닙니다.

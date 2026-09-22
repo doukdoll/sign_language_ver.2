@@ -1,6 +1,6 @@
 # 실시간 수어 인식 WebSocket 규약 v1
 
-상태: 실제 FE 세션 코드·BE·Python·ONNX 연결 검증 완료, 브라우저 카메라 검증 대기 (2026-09-18). [실행 기록과 재현 방법](LIVE_RECOGNITION_CHECK.md)
+상태(2026-09-22 갱신): 실제 FE 세션 코드·BE·Python·ONNX 합성 입력 연결 검증 완료. PR #15에서 소유자의 카메라 확인 완료를 기록했으며, PR #17의 카메라 종료 처리 변경 후 수동 재검증은 별도다. FE·BE·AI 회귀 테스트는 [CI](CI.md)에서도 통과했다. [실행 기록과 재현 방법](LIVE_RECOGNITION_CHECK.md)
 
 이 문서는 FE·BE·AI의 공통 규약이다. 세 구성 요소를 함께 적용해야 하며 이전 버전 메시지와는 호환되지 않는다. HTTP `/predict_keypoints`는 이번 규약의 대상이 아니다.
 
@@ -206,7 +206,7 @@ BE가 FE의 잘못된 JSON을 처리할 때는 실제 연결 ID로 오류를 돌
 
 - 상태 흐름: 연결 → START 대기 → 활성 → RESET 대기 → 활성 → END/연결 종료.
 - BE↔AI 연결이 끊어지면 BE는 해당 연결의 세션 매핑을 비우고 각 FE에 `AI_UNAVAILABLE`을 전달한 뒤 FE 연결을 닫는다. 재연결은 새 ID와 revision 0으로 시작한다.
-- 유휴 만료 기본값은 120초이며 설정 가능하게 구현한다. 마지막으로 수락한 요청의 서버 단조 시각을 기준으로 측정한다. 손 필터로 프레임 전송이 끊길 수 있으므로 만료를 FE에 명시적으로 알린다.
+- 유휴 만료 기본값은 120초이며 `server/config/realtime_config.yaml`의 `session_idle_timeout`으로 설정한다. 마지막으로 수락한 요청의 서버 단조 시각을 기준으로 측정한다. 손 필터로 프레임 전송이 끊길 수 있으므로 만료를 FE에 명시적으로 알린다.
 - AI는 만료 시 `SESSION_EXPIRED`를 보내고 상태를 삭제한다. BE는 소유 FE에 전달하고 매핑과 FE 연결을 정리한다.
 - 회귀 검증 대상: A/B 교차 프레임의 버퍼 격리, A 리셋 중 B 유지, 이전 revision 결과 폐기, ID 위조 거절, 대상별 필드 매핑, 잘못된 입력 후 상태 유지, FE 단절·AI 단절·유휴 만료 시 정리.
 
@@ -214,7 +214,7 @@ BE가 FE의 잘못된 JSON을 처리할 때는 실제 연결 ID로 오류를 돌
 
 AI 세션 상태는 `server/realtime/sessions.py`에서 연결별로 관리한다. `ai_server.py`는 모델과 전처리 함수를 연결한다. 수신 루프에서 메시지 처리는 순차 실행되며, 유휴 만료는 1초 간격으로 확인한다(동기 추론 중에는 추론 완료 후 확인). 비동기 worker를 도입할 경우 완료 시 revision 재검증이 추가로 필요하다.
 
-모델 설치 없이 실행 가능한 회귀 테스트: `server` 디렉터리에서 `python -m unittest tests.test_sessions -v`. 실제 ONNX 품질 및 FE↔BE↔AI 통합 테스트는 별도 검증 대상이다.
+모델 설치 없이 실행 가능한 회귀 테스트: `server` 디렉터리에서 `python -S -m unittest tests.test_sessions -v`. 실제 ONNX 연결 스모크 테스트는 별도로 수행했고, 모델 품질 평가는 포함하지 않는다.
 
 | 영역 | 현재 구현 |
 | --- | --- |
@@ -227,8 +227,8 @@ AI 세션 상태는 `server/realtime/sessions.py`에서 연결별로 관리한�
 
 회귀 테스트 명령:
 
-- FE: `cd frontend && npm test` (Node.js 22.6+)
+- FE: `cd frontend && npm test` (Node.js 24로 로컬·CI 검증)
 - BE: `cd backend && gradle test` (Java 17, Gradle 8.14.4; 현재 저장소에는 wrapper JAR가 없어 별도 Gradle 설치 필요)
-- AI: `cd server && python -m unittest tests.test_sessions -v`
+- AI: `cd server && python -S -m unittest tests.test_sessions -v` (Python 3.10)
 
 BE의 WebSocketRelayIntegrationTest는 실제 로컬 WebSocket과 모의 AI를 사용한다. 이 테스트와 단위 테스트는 실제 카메라·Python 서버·ONNX를 포함한 전체 시스템 검증을 대신하지 않는다. 통합 실행 시 브라우저 두 곳의 출발/도착 인식, 한쪽 RESET 중 다른 쪽 유지, AI 재시작 후 복구를 추가 확인한다.

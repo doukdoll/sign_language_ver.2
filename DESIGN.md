@@ -1,76 +1,53 @@
-# DESIGN.md - Sign Language Transport Platform
+# UI 설계와 현재 구현
 
-This document outlines the design principles, visual identity, and component architecture for the Sign Language Transport Platform. This file is intended to provide context for UI/UX improvements and design consistency tools like Google Stitch.
+이 문서는 현재 React 화면의 구조와 시각 요소를 설명합니다. 디자인 개선 방향과 이미 구현된 동작을 구분하며, 통신 계약은 [Frontend 연동 명세](FRONTEND_API_DOCS.md)와 [WebSocket 규약 v1](docs/RECOGNITION_PROTOCOL.md)을 기준으로 합니다.
 
----
+## 1. 현재 시각 구성
 
-## 🎨 Visual Identity
+- 대부분의 화면은 `450px × 900px` 세로형 키오스크 컨테이너를 사용합니다. 공통 레이아웃 컴포넌트가 아니라 각 페이지에 반복 정의되어 있습니다.
+- 배경은 `from-blue-50 to-white`, 카드 표면은 흰색, 버튼은 Tailwind blue 계열을 주로 사용합니다. 홈 CTA는 `#60A5FA`, 인식 페이지 제목은 `#3B4252`입니다.
+- 인식 페이지 제목은 23px, 홈 제목은 27px이며 본문과 버튼은 Tailwind 크기 클래스를 사용합니다. 별도 폰트 패밀리나 전역 디자인 토큰은 정의하지 않았습니다.
+- 카드·버튼의 모서리와 그림자는 컴포넌트별로 다릅니다. 모든 컨테이너에 공통 20px radius가 적용된 상태는 아닙니다.
+- 실제 진입점은 `frontend/src/index.css`를 불러옵니다. 이전 `App.css`의 큰 카메라 치수·색상은 현재 화면의 공통 스타일 기준이 아닙니다.
 
-### 1. Color Palette
-- **Primary Blue:** `#2260f5` (Main brand color, primary buttons)
-- **Secondary Blue:** `#60A5FA` (Lighter UI accents, secondary buttons)
-- **Backgrounds:**
-  - Base: `#F2F4F8` (Light gray-blue for the app container)
-  - Surface: `#FFFFFF` (White for cards and content areas)
-  - Gradients: `blue-50` to `white` (Used in page backgrounds)
-- **Typography & UI:**
-  - Heading Text: `#3b4252` (Dark navy for readability)
-  - Body/Subtext: `#6b7280` (Medium gray)
-  - Status/Highlight: `#3b4252` (Emphasis color)
+## 2. 컴포넌트와 책임
 
-### 2. Typography
-- **Primary Font:** Sans-serif (Clean, modern, highly legible)
-- **Styles:**
-  - **Main Headers:** 40px - 55px, Weight 800 (Extra Bold)
-  - **Section Titles:** 23px - 27px, Weight 700 (Bold)
-  - **Body Text:** 18px - 30px, Weight 400/500 (Regular/Medium)
-  - **Status Text:** 30px - 40px, Weight 700
+| 영역 | 현재 구현 |
+| --- | --- |
+| `Header.tsx` | 뒤로가기·홈 버튼과 가운데 제목. 일반 `relative` 헤더이며 sticky 동작은 없음 |
+| 페이지 하단 버튼 | 페이지별로 작성. 재사용 공통 Footer 컴포넌트는 없음 |
+| `TrainCard.tsx` | 열차 시간·구간·요금과 선택 상태 표시 |
+| `recognition/CameraFeed.tsx` | 기본 380px × 500px 영상 영역. 640 × 480을 선호하는 사용자 카메라 요청, 화면 종료 시 소유 스트림 정리 |
+| `recognition/RecognitionResult.tsx` | 인식 결과와 사용자 확인 안내. 인식 페이지에서 영상 하단에 겹쳐 배치 |
+| `recognition/RecognitionButton.tsx` | `RecognitionButtons` 컴포넌트. 재시도와 확인 버튼, `canConfirm`에 따른 확인 비활성화 |
+| `seats/SeatGrid.tsx` | 좌석 선택용 시각적 배치. 실제 재고 API와 미연결 |
+| `PaymentPopup.tsx`, `PaymentProcess.tsx` | 결제 수단 선택과 처리 화면 시뮬레이션 |
+| `ui/TicketAnimation.tsx` | 결제 완료 페이지의 티켓 출력 표현. 실제 발권 연동 아님 |
 
-### 3. Layout & Shape
-- **Form Factor:** Optimized for **Kiosk Portrait Mode** (Target resolution aspect: ~9:18).
-- **Core Container:** 450px (width) x 900px (height) with a `shadow-2xl` and `border-radius: 20px`.
-- **Spacing:** Generous padding (`px-8`, `px-10`) to ensure a touch-friendly interface.
-- **Rounding:** Large border-radii (20px to 60px) for a soft, modern, and friendly feel.
+## 3. 인식 상호작용
 
----
+- 출발역과 도착역 화면은 각각 `DEPARTURE`/`ARRIVAL`로 세션을 시작합니다. 카메라 영상의 MediaPipe 결과를 WebSocket으로 보냅니다.
+- `SESSION_STARTED`/`SESSION_RESET` ACK와 MediaPipe 준비 여부를 반영하여 확인 버튼의 준비 상태를 결정합니다.
+- 결과가 있거나 오류가 발생하면 재시도·확인 버튼을 표시합니다. `<unk>` 또는 유효 결과가 없는 상태는 역으로 확정할 수 없습니다.
+- 재시도는 화면 결과만 지우는 동작이 아니라 서버에 RESET을 보내는 동작입니다. 이전 revision의 결과는 표시하지 않습니다.
+- 오류 메시지는 화면에 표시하지만 별도의 연결 대기 안내 영역은 현재 페이지 코드에서 주석 처리되어 있습니다. 이를 항상 표시되는 UI로 설명하지 않습니다.
+- 카메라 종료와 결제 화면 전환 타이머 정리 로직은 구현되어 있습니다. lint·타입 검사·세션 테스트 통과가 실제 카메라와 결제 화면의 수동 검증을 대신하지는 않습니다.
 
-## 🧱 Component Architecture
+## 4. 현재 화면 흐름
 
-### 1. Common Components
-- **Header:** Sticky top navigation with "Back" and "Home" icons, centering the current page title.
-- **Footer:** Navigation or call-to-action buttons (e.g., "Next", "Confirm").
-- **TrainCard:** Displays individual train schedules with departure/arrival times, duration, and price.
+```text
+홈 → 출발역 인식 → 도착역 인식 → 탑승 인원 → 편도/왕복 → 날짜/시간
+   → 열차 시간표 → 좌석 → 예매 요약 → 결제 시뮬레이션 → 완료
+```
 
-### 2. Recognition Components (Core Feature)
-- **CameraFeed:** A large, rounded video frame (typically 900px height scaled into the container) that captures user sign language.
-- **RecognitionResult:** An overlay or immediate sub-component that displays the recognized word (e.g., "서울역") in real-time.
-- **RecognitionButtons:** "Retry" and "Confirm" actions presented after a word is successfully detected.
+왕복 선택 시 가는 편과 오는 편의 열차·좌석을 나누어 선택합니다. 화면 간 데이터는 주로 React Router의 `location.state`로 전달합니다. 열차 조회에는 mock fallback이 있고 예매 저장·결제 승인·좌석 재고 연동은 완료되지 않았으므로, 완료 화면이 실제 예약 또는 결제 성공을 의미하지 않습니다.
 
-### 3. Functional Modules
-- **SeatGrid:** A visual map of the train car for seat selection.
-- **PaymentPopup/Process:** Guided step-by-step payment simulation.
+## 5. 앞으로의 디자인 개선 방향
 
----
+아래는 완료된 기능이 아닌 후속 개선 항목입니다.
 
-## ✨ Motion & Interaction
-- **Button Feedback:** `active:scale-95` and transition effects (`duration-200`) provide tactile feedback for touch screens.
-- **Transitions:** Simple `FadeIn` / `FadeOut` animations for page transitions and result displays to prevent jarring UI jumps.
-- **Accessibility:** Large touch targets (buttons are often `py-6` or `px-12`) designed for kiosk interaction.
-
----
-
-## 🚉 User Flow (Design Perspective)
-1. **Home:** High-impact call to action ("예매 시작하기").
-2. **Step-by-Step Selection:** Each step (Departure -> Arrival -> Date -> Passengers -> Train -> Seat) follows a consistent layout:
-   - Header with Progress Title.
-   - Instructional text at the top.
-   - Interactive content in the center (Camera for AI steps, List for Selection steps).
-   - Confirmation at the bottom.
-3. **Completion:** Clear visual confirmation with `TicketAnimation` for a satisfying end-to-end experience.
-
----
-
-## 💡 Design Goal for Stitch
-- **Consistency:** Ensure all "AI Recognition" pages feel identical in layout.
-- **Modernization:** Enhance the "Kiosk" feel with better shadows, micro-interactions, and refined typography.
-- **Accessibility:** Ensure high contrast for all text elements and clear visual cues for recognition status.
+- 반복되는 키오스크 레이아웃과 색상·간격·타이포그래피를 공통 컴포넌트와 토큰으로 정리합니다.
+- 연결 중, 인식 중, 결과, 오류, 재시도 상태를 일관된 시각 언어로 표시합니다.
+- 고정 450 × 900 레이아웃의 작은 화면 대응과 스크롤·포커스 흐름을 점검합니다.
+- 아이콘 버튼의 접근 가능한 이름, 키보드 조작, 색 대비, 움직임 감소 설정을 검증합니다. 현재 접근성 준수가 검증된 상태는 아닙니다.
+- 실제 서비스로 확장할 때 mock 시간표·좌석·결제 상태를 명시적으로 구분합니다.

@@ -55,7 +55,7 @@ python -S -m unittest tests.test_sessions -v
 - GitHub 토큰은 `contents: read`로 제한하고 checkout 인증 정보를 남기지 않습니다. 별도 secret은 사용하지 않습니다.
 - 액션은 확인한 릴리스의 전체 커밋 SHA로 고정하며, 옆 주석에 버전을 기록합니다. 갱신 시 공식 릴리스와 SHA를 함께 확인합니다.
 - npm 캐시는 잠금 파일을 기준으로 사용합니다. Gradle은 basic 캐시를 사용하며 `develop` 실행에서만 캐시를 씁니다.
-- 이 파일 추가만으로 실패한 PR의 병합이 강제 차단되지는 않습니다. 최초 CI 실행 후 `develop` 보호 규칙에서 위 세 체크를 필수 상태 검사로 지정해야 합니다. 저장소 보호 규칙은 이번 작업에서 변경하지 않았습니다.
+- 이 파일 추가만으로 실패한 PR의 병합이 강제 차단되지는 않습니다. `develop` 보호 규칙에서 위 세 체크를 필수 상태 검사로 지정해야 합니다. CI 구성·문서 현행화 작업에서는 저장소 보호 규칙을 변경하지 않았습니다.
 
 공식 설정 참고: [setup-node](https://github.com/actions/setup-node), [setup-gradle](https://github.com/gradle/actions/blob/main/docs/setup-gradle.md), [setup-python](https://github.com/actions/setup-python).
 
@@ -67,4 +67,9 @@ python -S -m unittest tests.test_sessions -v
 - Python 3.10의 `python -S -m unittest tests.test_sessions -v`: 테스트 15개 통과.
 - `npm ci`의 감사 요약에서 기존 의존성 취약점 19개(low 1, moderate 4, high 14)가 보고됐습니다. 자동 수정이나 의존성 변경은 하지 않았습니다.
 
-로컬 검증과 GitHub-hosted runner 실행 결과는 구분합니다. 워크플로를 push하고 `develop` 대상 PR을 생성한 뒤 최초 GitHub 실행 결과를 확인해야 합니다.
+GitHub-hosted Ubuntu runner에서도 다음 실행을 확인했습니다. 두 실행 모두 `Frontend`, `Backend`, `AI session tests`가 성공했습니다.
+
+- [PR #18 CI, run #1](https://github.com/doukdoll/sign_language_ver.2/actions/runs/35729782219): 커밋 `ffc19f4`, `pull_request` 이벤트.
+- [develop 병합 후 CI](https://github.com/doukdoll/sign_language_ver.2/actions/runs/35732788235): squash 커밋 `439741d`, `push` 이벤트.
+
+로컬 검사·GitHub CI·실제 모델/카메라 검증은 서로 다른 범위입니다. 위 성공 기록은 이후 모든 커밋의 통과를 보장하지 않으며, 새 PR의 Checks를 다시 확인해야 합니다.
