@@ -7,22 +7,25 @@ export default function PaymentPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const paymentState = location.state;
     const {
         paymentMethod,
         totalPrice,
         departureStation,
         arrivalStation,
         passengers,
-        ...otherInfo
-    } = location.state || {};
+    } = paymentState || {};
 
    
     const [fade, setFade] = useState("opacity-0");
+    const [isCancelling, setIsCancelling] = useState(false);
 
     // 페이지 로드 시 페이드 인
     useEffect(() => {
-        setTimeout(() => setFade("opacity-100"), 10);
-    }, []);
+        if (isCancelling) return;
+        const timer = setTimeout(() => setFade("opacity-100"), 10);
+        return () => clearTimeout(timer);
+    }, [isCancelling]);
 
     // 잘못된 접근 방지
     useEffect(() => {
@@ -32,44 +35,39 @@ export default function PaymentPage() {
         }
     }, [paymentMethod, totalPrice, navigate]);
 
-    
-    const fadeOutAndNavigate = (callback: Function) => {
-        setFade("opacity-0");
-        setTimeout(() => callback(), 300); // 300ms 후 이동
-    };
-
-    // 결제 완료 → 완료 페이지 이동
-    const handleComplete = () => {
-        fadeOutAndNavigate(() => {
-            navigate("/paymentcomplete", {
-                state: {
-                    ...otherInfo,
-                    departureStation,
-                    arrivalStation,
-                    passengers,
-                    totalPrice,
-                    paymentMethod,
-                    paymentDate: new Date().toISOString(),
-                }
-            });
-        });
-    };
-
-    // 6초 후 자동 이동 타이머
+    // 결제 시뮬레이션: 6초 대기 + 300ms 페이드 후 이동합니다.
+    // 취소하거나 화면을 나가면 완료/이동 타이머를 모두 해제합니다.
     useEffect(() => {
-        if (!paymentMethod) return;
+        if (!paymentMethod || !totalPrice) return;
 
+        if (isCancelling) {
+            const cancelTimer = setTimeout(() => navigate(-1), 300);
+            return () => clearTimeout(cancelTimer);
+        }
+
+        let navigationTimer: ReturnType<typeof setTimeout> | undefined;
         const timer = setTimeout(() => {
-            console.log("6초 경과 → 결제 완료 페이지로 이동");
-            handleComplete();
+            setFade("opacity-0");
+            navigationTimer = setTimeout(() => {
+                navigate("/paymentcomplete", {
+                    state: {
+                        ...paymentState,
+                        paymentDate: new Date().toISOString(),
+                    }
+                });
+            }, 300);
         }, 6000);
 
-        return () => clearTimeout(timer);
-    }, [paymentMethod]);
+        return () => {
+            clearTimeout(timer);
+            clearTimeout(navigationTimer);
+        };
+    }, [paymentMethod, totalPrice, paymentState, navigate, isCancelling]);
 
     // 결제 취소 → 뒤로가기
     const handleClose = () => {
-        fadeOutAndNavigate(() => navigate(-1));
+        setFade("opacity-0");
+        setIsCancelling(true);
     };
 
     if (!paymentMethod) return null;

@@ -80,8 +80,6 @@ export default function ArrivalPage() {
               <CameraFeed  
                 videoRef={videoRef}
                 isRecognizing={state.isRecognizing}
-                recognized={state.recognizedLabel !== null}
-                station={state.recognizedLabel}
               />
 
               {/* 인식 결과를 카메라 하단에 표시 */}

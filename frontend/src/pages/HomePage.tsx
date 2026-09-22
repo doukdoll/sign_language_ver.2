@@ -1,10 +1,7 @@
-import { useState, useRef } from "react";
 import ticketIcon from "../assets/ticket.png";
 import { useNavigate} from "react-router-dom";
 
 export default function HomePage() {
-  const [isRecognized, setIsRecognized] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const navigate = useNavigate();
 
   const handleStart = () => {

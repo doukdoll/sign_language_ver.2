@@ -5,8 +5,6 @@ interface CameraFeedProps {
   height?: string;
   className?: string;
   isRecognizing?: boolean; 
-  recognized?: boolean;    
-  station?: string | null;
   videoRef?: React.RefObject<HTMLVideoElement | null>; // 외부에서 ref 주입 가능
 }
 
@@ -20,9 +18,7 @@ const CameraFeed = forwardRef<CameraFeedHandle, CameraFeedProps>(
     height = "500px", 
     className = "", 
     videoRef: externalVideoRef,
-    isRecognizing,
-    recognized,
-    station
+    isRecognizing
   }, ref) => {
     const internalVideoRef = useRef<HTMLVideoElement | null>(null);
     
@@ -35,6 +31,11 @@ const CameraFeed = forwardRef<CameraFeedHandle, CameraFeedProps>(
     }));
 
     useEffect(() => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      let cancelled = false;
+      let ownedStream: MediaStream | undefined;
       const startCamera = async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -44,10 +45,15 @@ const CameraFeed = forwardRef<CameraFeedHandle, CameraFeedProps>(
               facingMode: 'user'
             } 
           });
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
+          // 권한 응답을 기다리는 동안 화면을 떠났다면 늦게 열린 스트림도 종료합니다.
+          if (cancelled) {
+            stream.getTracks().forEach((track) => track.stop());
+            return;
           }
+          ownedStream = stream;
+          video.srcObject = stream;
         } catch (err) {
+          if (cancelled) return;
           console.error("카메라 접근 실패:", err);
           alert("카메라 접근을 허용해주세요!");
         }
@@ -56,12 +62,13 @@ const CameraFeed = forwardRef<CameraFeedHandle, CameraFeedProps>(
       startCamera();
 
       return () => {
-        if (videoRef.current?.srcObject) {
-          const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-          tracks.forEach((track) => track.stop());
+        cancelled = true;
+        ownedStream?.getTracks().forEach((track) => track.stop());
+        if (ownedStream && video.srcObject === ownedStream) {
+          video.srcObject = null;
         }
       };
-    }, []);
+    }, [videoRef]);
 
     return (
       <div

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom"; // 1. useLocation �
 import { useSeatStatus } from "../hooks/useSeatStatus";
 import SeatGrid from "../components/seats/SeatGrid";
 import Header from "../components/Header";
+import type { SeatStatus } from "../styles/seatStyles";
 
 export default function KTXSeatSelector() {
     const navigate = useNavigate();
@@ -25,9 +26,9 @@ export default function KTXSeatSelector() {
 
     // 초기 좌석 상태 고정 (기존 코드 유지)
     const initialSeats = useMemo(() => {
-        const seats: any = {};
+        const seats: Record<string, SeatStatus> = {};
         for (let row = 1; row <= 7; row++) {
-            for (let col of ["A", "B", "C", "D"]) {
+            for (const col of ["A", "B", "C", "D"]) {
                 const seat = `${row}${col}`;
                 seats[seat] = Math.random() > 0.75 ? "occupied" : "available";
             }
