@@ -14,6 +14,8 @@ MediaPipe/OpenPose 순서의 키포인트를 전처리하고 ONNX 모델로 기�
 - 모델 입력: 180 frames × 274 features
 - 서버 WebSocket 버퍼: 128 frames, 5 frames마다 추론 시도
 
+HTTP 경계는 `realtime/http_api.py`의 Flask 앱 factory에서 검증하고, `ai_server.py`가 실제 전처리·모델 함수를 연결합니다. HTTP와 WebSocket은 같은 추론 잠금으로 모델 호출을 직렬화하며, WebSocket 버퍼는 연결·세션별로 분리합니다.
+
 `app.py`는 웹 서버가 아니라 PC 카메라를 직접 여는 독립 실행형 실시간 인식 프로그램입니다.
 
 ## 인식 클래스
@@ -68,7 +70,7 @@ macOS/Linux 가상환경 활성화 명령은 `source .venv/bin/activate`입니�
 python ai_server.py
 ```
 
-정상적으로 모델을 읽으면 `0.0.0.0:5001`에서 서버가 시작됩니다. 현재 별도 health endpoint는 없습니다.
+`0.0.0.0:5001`에서 서버가 시작됩니다. 모델을 읽지 못한 상태에서는 HTTP 추론에 503, WebSocket START에 `MODEL_NOT_READY`를 반환합니다. 현재 별도 health endpoint는 없습니다.
 
 ### HTTP 요청
 
@@ -86,10 +88,13 @@ payload = {
 }
 ```
 
-`keypointData`에는 다음 두 형식을 사용할 수 있습니다.
+`keypointData`에는 다음 형식을 사용할 수 있습니다.
 
 - `{ "keypoints": [...] }`
-- `{ "body": [...], "face": [...], "leftHand": [...], "rightHand": [...] }`
+- `{ "body": [...], "face": [...], "leftHand": [...], "rightHand": [...] }` — 각각 25·70·21·21개
+- 키포인트 137개의 배열을 직접 전달하는 기존 형식
+
+한 프레임의 각 점은 모두 `[x, y]` 또는 모두 `[x, y, confidence]`여야 합니다. 좌표는 유한한 숫자이며 confidence는 0~1입니다. 3열 형식의 결측점은 `[null, null, 0]`입니다. 잘못된 개수·혼합 열 수·문자열·불리언·NaN/Infinity는 전처리 전에 거부합니다.
 
 HTTP 요청은 한 프레임을 전처리한 뒤 같은 프레임을 128개로 복제하고, ONNX 서비스에서 나머지 52프레임을 0으로 채웁니다. 동작 시퀀스 전체를 사용하는 방식이 아니므로 실시간 WebSocket 추론과 결과 특성이 다를 수 있습니다.
 
@@ -103,7 +108,20 @@ HTTP 요청은 한 프레임을 전처리한 뒤 같은 프레임을 128개로 �
 }
 ```
 
-`recognizedProb`은 0~1이 아니라 백분율 0~100 범위입니다. 현재 `recognitionTarget` 값과 관계없이 예측 단어는 `departureCity`에 들어갑니다.
+`recognizedProb`은 0~1이 아니라 백분율 0~100 범위입니다. `recognitionTarget`이 `DEPARTURE`이면 `departureCity`, `ARRIVAL`이면 `arrivalCity`에 예측 단어를 넣고 반대 필드는 `null`입니다. target을 생략하면 기존 클라이언트 호환을 위해 `DEPARTURE`로 처리합니다. 명시적인 다른 값이나 `null`은 400입니다.
+
+실패를 `200`의 `인식 중...`으로 숨기지 않으며, 오류 응답은 다음 필드를 사용합니다. 내부 예외 내용은 서버 로그에만 남깁니다.
+
+```json
+{
+  "errorCode": "MODEL_NOT_READY",
+  "errorMessage": "model is not ready"
+}
+```
+
+- 400: `INVALID_REQUEST` 또는 `INVALID_KEYPOINTS` — JSON·대상·키포인트 입력 오류
+- 503: `MODEL_NOT_READY` — 모델 초기화 실패
+- 500: `INFERENCE_FAILED` — 추론 예외 또는 유효하지 않은 모델 결과
 
 ### WebSocket 요청
 
@@ -147,6 +165,8 @@ python app.py
 
 `config/realtime_config.yaml`을 읽어 카메라, 모델, 세그멘터, 로깅 옵션을 구성합니다. `q` 키로 종료합니다.
 
+웹 서비스에서 호출되지 않던 `AdvancedHandValidator` 초기화는 제거했습니다. 로컬 카메라 모드의 품질 검증기·세그멘터와 기존 학습·실험 코드는 그대로 유지합니다.
+
 주요 설정:
 
 아래는 YAML에 저장된 값입니다. 현재 `app.py` 경로도 ONNX 모드에서는 `realtime/app_main.py`가 버퍼를 128로 고정하므로 `window_size: 180`을 읽어 180프레임을 수집하는 것은 아닙니다. 모델 입력은 별도 0 padding을 통해 180프레임이 됩니다.
@@ -183,9 +203,10 @@ server/
 ├── config/                   # 실시간·테스트 YAML 설정
 ├── deployment/               # ONNX 모델, 어휘, 메타데이터
 ├── input_keypoint/           # 변환, 정규화, 손 필터, 검증
-├── realtime/                 # WebSocket 세션 관리, 로컬 추론, 세그멘터
+├── realtime/                 # HTTP 앱 factory, WS 세션, 로컬 추론, 세그멘터
 ├── signjoey/                 # 모델 학습·평가 코드
-├── tests/                    # 모델 없는 세션 회귀 테스트, 수동 추론 도구
+├── requirements-test.txt      # 모델 없는 HTTP 테스트용 Flask
+├── tests/                    # HTTP·세션 회귀 테스트, 수동 추론 도구
 └── utils/                    # 설정, 로깅, 성능, 예외 처리
 ```
 
@@ -199,7 +220,16 @@ server/
 python -S -m unittest tests.test_sessions -v
 ```
 
-[GitHub Actions CI](../.github/workflows/ci.yml)는 `develop` 대상 PR과 `develop` push에서 이 테스트를 실행합니다. CI 범위와 재현 명령은 [CI 가이드](../docs/CI.md)를 참고합니다. 실제 ONNX 추론·카메라·정확도 검증은 CI에 포함되지 않습니다.
+HTTP 회귀 테스트 15개는 Flask test client로 실제 요청·응답 경계를 검사합니다. 앱 factory에 테스트용 전처리·예측 함수를 전달하므로 모델·torch·NumPy·ONNX Runtime·카메라 없이 실행할 수 있습니다.
+
+```bash
+python -m pip install -r requirements-test.txt
+python -m unittest tests.test_http_api -v
+```
+
+`requirements-test.txt`는 테스트용 Flask만 설치하며 서비스 실행용 의존성을 대체하지 않습니다. `-S`는 site-packages를 제외하므로 Flask가 필요한 HTTP 테스트에는 사용하지 않습니다.
+
+[GitHub Actions CI](../.github/workflows/ci.yml)는 `develop` 대상 PR과 `develop` push에서 세션·HTTP 테스트를 실행하도록 구성합니다. 현재 변경의 30개 테스트는 로컬에서 통과했습니다. 기존 CI 성공 기록은 당시 세션 15개에 대한 기록이며, 새 HTTP 테스트의 원격 실행 결과는 별도로 확인해야 합니다. CI 범위와 재현 명령은 [CI 가이드](../docs/CI.md)를 참고합니다. 실제 ONNX 추론·카메라·정확도 검증은 CI에 포함되지 않습니다.
 
 아래 수동 테스트 도구는 모델 및 관련 의존성이 필요합니다. 사용법은 [tests/INFERENCE_TEST_README.md](tests/INFERENCE_TEST_README.md)를 참고합니다.
 

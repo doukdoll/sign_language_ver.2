@@ -8,7 +8,31 @@
 python -S -m unittest tests.test_sessions -v
 ```
 
-[CI](../../.github/workflows/ci.yml)의 AI 작업도 이 명령을 사용합니다. 실제 ONNX 연결은 [별도 스모크 검증](../../docs/LIVE_RECOGNITION_CHECK.md) 대상이며 CI에서 모델 정확도나 카메라 동작을 검증하지는 않습니다.
+[CI](../../.github/workflows/ci.yml)의 AI 작업도 이 명령을 사용합니다. `-S`로 외부 site-packages를 제외해 표준 라이브러리만 사용하는 상태를 유지합니다.
+
+## 자동 HTTP 회귀 테스트
+
+`test_http_api.py`의 15개 테스트는 `realtime.http_api.create_app()`으로 만든 실제 Flask 앱에 test client 요청을 보내 검증합니다. 전처리·모델 호출은 주입된 테스트 함수로 대체하므로 torch·NumPy·ONNX Runtime·카메라가 필요하지 않습니다. 실제 모델 초기화를 모킹하거나 Flask 자체를 가짜 응답으로 바꾸지는 않습니다.
+
+```bash
+python -m pip install -r requirements-test.txt
+python -m unittest tests.test_http_api -v
+```
+
+`requirements-test.txt`는 `Flask==3.1.2`만 직접 요구합니다. HTTP 테스트에는 `-S`를 붙이지 않습니다.
+
+검증 내용:
+
+- DEPARTURE/ARRIVAL 응답 필드와 target 생략 시 기존 DEPARTURE 기본값
+- flat·wrapped·신체 부위 분할 형식, 기존 2열 좌표와 3열 결측점의 전달
+- 잘못된 JSON·입력 형태·개수·좌표·confidence → 400
+- 모델 미준비 → 503, 추론 예외·잘못된 예측 결과 → 500
+- 오류의 `errorCode`·`errorMessage` 형식과 내부 예외 정보 비노출
+- 실패 뒤 다음 정상 요청 처리
+
+현재 코드에서 세션 15개 + HTTP 15개가 로컬 통과했습니다. 이전 CI 성공 기록은 당시 세션 테스트에 대한 결과이며, 신규 HTTP 단계의 실제 원격 결과는 별도로 확인해야 합니다. [CI](../../.github/workflows/ci.yml)에 최소 테스트 의존성 설치와 HTTP 테스트 단계를 추가합니다.
+
+실제 ONNX 연결은 [별도 스모크 검증](../../docs/LIVE_RECOGNITION_CHECK.md) 대상입니다. 현재 변경에서는 실제 ONNX를 로드한 HTTP·WS 공통 추론의 잠금 적용, `(128, 274)` 입력, 기존 결과와의 일치 및 HTTP 표적 매핑을 로컬 진단했습니다. 이는 합성 입력 연결 점검이며 모델 정확도나 카메라 동작 검증이 아닙니다.
 
 ## 수동 추론 도구
 

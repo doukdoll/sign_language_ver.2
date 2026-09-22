@@ -1,0 +1,2 @@
+# Model-free Flask HTTP regression tests; no torch, ONNX, or camera dependencies.
+Flask==3.1.2
