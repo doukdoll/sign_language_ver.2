@@ -30,7 +30,7 @@ python -m unittest tests.test_http_api -v
 - 오류의 `errorCode`·`errorMessage` 형식과 내부 예외 정보 비노출
 - 실패 뒤 다음 정상 요청 처리
 
-현재 코드에서 세션 15개 + HTTP 15개가 로컬 통과했습니다. 이전 CI 성공 기록은 당시 세션 테스트에 대한 결과이며, 신규 HTTP 단계의 실제 원격 결과는 별도로 확인해야 합니다. [CI](../../.github/workflows/ci.yml)에 최소 테스트 의존성 설치와 HTTP 테스트 단계를 추가합니다.
+현재 코드에서 세션 15개 + HTTP 15개가 로컬 통과했습니다. [CI](../../.github/workflows/ci.yml)에는 최소 테스트 의존성 설치와 HTTP 테스트 단계가 포함됩니다. 원격 결과는 [PR #20](https://github.com/doukdoll/sign_language_ver.2/pull/20)의 최종 커밋 Checks에서 확인합니다. 이전 PR #18의 성공 기록은 당시 세션 테스트만 검증한 결과입니다.
 
 실제 ONNX 연결은 [별도 스모크 검증](../../docs/LIVE_RECOGNITION_CHECK.md) 대상입니다. 현재 변경에서는 실제 ONNX를 로드한 HTTP·WS 공통 추론의 잠금 적용, `(128, 274)` 입력, 기존 결과와의 일치 및 HTTP 표적 매핑을 로컬 진단했습니다. 이는 합성 입력 연결 점검이며 모델 정확도나 카메라 동작 검증이 아닙니다.
 

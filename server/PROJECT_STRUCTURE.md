@@ -73,7 +73,7 @@ python -m pip install -r requirements-test.txt
 python -m unittest tests.test_http_api -v
 ```
 
-세션 15개와 HTTP 15개는 현재 코드의 로컬 검증에서 통과했습니다. [CI](../.github/workflows/ci.yml)에도 두 단계를 연결하며, 이전 CI 성공 기록은 신규 HTTP 테스트까지 실행했다는 뜻은 아닙니다. 실제 모델 연결과 카메라 점검은 [별도 실행 기록](../docs/LIVE_RECOGNITION_CHECK.md)을 참고합니다. 합성 입력 연결 검증은 정확도 평가가 아닙니다.
+세션 15개와 HTTP 15개는 현재 코드의 로컬 검증에서 통과했습니다. [CI](../.github/workflows/ci.yml)는 두 단계를 실행하며, 원격 결과는 [PR #20](https://github.com/doukdoll/sign_language_ver.2/pull/20)의 최종 커밋 Checks에서 확인합니다. 이전 PR #18 성공 기록은 신규 HTTP 테스트까지 실행했다는 뜻은 아닙니다. 실제 모델 연결과 카메라 점검은 [별도 실행 기록](../docs/LIVE_RECOGNITION_CHECK.md)을 참고합니다. 합성 입력 연결 검증은 정확도 평가가 아닙니다.
 
 ## 남아 있는 실험·기록의 범위
 

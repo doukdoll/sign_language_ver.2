@@ -229,7 +229,7 @@ python -m unittest tests.test_http_api -v
 
 `requirements-test.txt`는 테스트용 Flask만 설치하며 서비스 실행용 의존성을 대체하지 않습니다. `-S`는 site-packages를 제외하므로 Flask가 필요한 HTTP 테스트에는 사용하지 않습니다.
 
-[GitHub Actions CI](../.github/workflows/ci.yml)는 `develop` 대상 PR과 `develop` push에서 세션·HTTP 테스트를 실행하도록 구성합니다. 현재 변경의 30개 테스트는 로컬에서 통과했습니다. 기존 CI 성공 기록은 당시 세션 15개에 대한 기록이며, 새 HTTP 테스트의 원격 실행 결과는 별도로 확인해야 합니다. CI 범위와 재현 명령은 [CI 가이드](../docs/CI.md)를 참고합니다. 실제 ONNX 추론·카메라·정확도 검증은 CI에 포함되지 않습니다.
+[GitHub Actions CI](../.github/workflows/ci.yml)는 `develop` 대상 PR과 `develop` push에서 세션·HTTP 테스트를 실행합니다. 현재 변경의 30개 테스트는 로컬에서 통과했으며 원격 결과는 [PR #20](https://github.com/doukdoll/sign_language_ver.2/pull/20)의 최종 커밋 Checks에서 확인합니다. 이전 PR #18의 성공 기록은 당시 세션 15개 기준입니다. CI 범위와 재현 명령은 [CI 가이드](../docs/CI.md)를 참고합니다. 실제 ONNX 추론·카메라·정확도 검증은 CI에 포함되지 않습니다.
 
 아래 수동 테스트 도구는 모델 및 관련 의존성이 필요합니다. 사용법은 [tests/INFERENCE_TEST_README.md](tests/INFERENCE_TEST_README.md)를 참고합니다.
 

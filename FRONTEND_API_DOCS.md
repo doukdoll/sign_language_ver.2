@@ -117,6 +117,6 @@ const frame = {
 
 [CI](.github/workflows/ci.yml)는 `develop` 대상 PR과 push에서 FE 전체 lint(경고 0), `npm test`, 타입 검사와 프로덕션 빌드를 수행합니다. 과거 PR #18 및 당시 develop CI 통과는 세션 테스트 8개 기준 기록입니다.
 
-이번 코드 정리 후 로컬 lint·타입 검사·빌드와 테스트 34개(세션 규약 8개, 모의 카메라 생명주기 11개, 예약/조회 15개)가 통과했습니다. 이번 변경의 원격 CI와 실제 브라우저 재검증은 아직 실행하지 않았습니다. 테스트는 주입한 모의 카메라/스케줄러·순수 상태·비동기 요청을 검증하며 실제 장치·MediaPipe WASM·React 화면·결제를 자동 실행하지 않습니다.
+이번 코드 정리 후 로컬 lint·타입 검사·빌드와 테스트 34개(세션 규약 8개, 모의 카메라 생명주기 11개, 예약/조회 15개)가 통과했습니다. 원격 CI는 [PR #20](https://github.com/doukdoll/sign_language_ver.2/pull/20)의 최종 커밋 Checks를 확인합니다. 실제 브라우저 수동 재검증은 남아 있습니다. 테스트는 주입한 모의 카메라/스케줄러·순수 상태·비동기 요청을 검증하며 실제 장치·MediaPipe WASM·React 화면·결제를 자동 실행하지 않습니다.
 
 FE 세션 코드 → 실제 BE → Python → ONNX 스모크 명령 및 브라우저 확인 항목은 [실시간 연동 검증 문서](docs/LIVE_RECOGNITION_CHECK.md)를 참고하세요.

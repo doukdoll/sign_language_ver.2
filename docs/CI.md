@@ -86,4 +86,8 @@ GitHub-hosted Ubuntu runner에서도 다음 실행을 확인했습니다. 두 �
 - `actionlint 1.7.12`와 Markdown 상대 링크·JSON 예제 검사 통과.
 - 실제 BE·Python·ONNX 합성 입력 연결 재검증 통과([상세 범위](LIVE_RECOGNITION_CHECK.md)).
 
-이 변경의 PR은 아직 생성하지 않았으며 원격 CI도 실행하지 않았습니다. 브랜치 push만으로는 위 워크플로가 실행되지 않습니다. 기존 번들 크기·브라우저 호환성 데이터 경고와 Gradle 9 비호환 기능 경고는 남아 있습니다. 실제 카메라·왕복 UI·Docker 실행·보안 검사는 이번 자동 검증 범위가 아닙니다.
+위 내용은 2026-09-22 PR 생성 전의 로컬 검증 기록입니다. 이후 2026-09-23 [PR #20](https://github.com/doukdoll/sign_language_ver.2/pull/20)을 `develop` 대상으로 생성했습니다. 해당 PR의 Checks에서 최종 커밋의 `Frontend`, `Backend`, `AI session tests` 결과를 확인합니다. 작업 브랜치 push만으로는 워크플로가 실행되지 않으며, PR 생성 이후에는 추가 커밋도 검사합니다.
+
+- [PR #20 최초 CI](https://github.com/doukdoll/sign_language_ver.2/actions/runs/35800861860): 코드 정리 커밋 `9ac2634`에서 세 작업 모두 성공했습니다. 이후 문서 보완 커밋도 병합 전에 다시 검사합니다.
+
+기존 번들 크기·브라우저 호환성 데이터 경고와 Gradle 9 비호환 기능 경고는 남아 있습니다. 실제 카메라·왕복 UI·Docker 실행·보안 검사는 이번 자동 검증 범위가 아닙니다.
