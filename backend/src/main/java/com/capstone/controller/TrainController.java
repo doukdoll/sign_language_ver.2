@@ -9,8 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 @RestController
 @RequestMapping("/train")
@@ -26,37 +24,13 @@ public class TrainController {
             @RequestParam(name = "departure", required = false) String departure,
             @RequestParam(name = "destination", required = false) String destination,
 
-            // 🔥 String 대신 LocalDateTime으로 받고, 패턴을 지정합니다.
             @RequestParam(name = "departureFrom", required = false)
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm") LocalDateTime departureFrom,
 
             @RequestParam(name = "departureTo", required = false)
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm") LocalDateTime departureTo
     ) {
-        // 수동 파싱 로직(parseDateTime) 필요 없음! 바로 서비스로 넘기면 됩니다.
         return korailService.findSchedules(departure, destination, departureFrom, departureTo);
-    }
-//    public List<TrainInfoDto> search(
-//            @RequestParam(name = "departure", required = false) String departure,
-//            @RequestParam(name = "destination", required = false) String destination,
-//            @RequestParam(name = "departureFrom", required = false) String departureFrom,
-//            @RequestParam(name = "departureTo", required = false) String departureTo
-//    ) {
-//        LocalDateTime from = parseDateTime(departureFrom);
-//        LocalDateTime to = parseDateTime(departureTo);
-//        return korailService.findSchedules(departure, destination, from, to);
-//    }
-
-    private LocalDateTime parseDateTime(String text) {
-        if (text == null || text.isBlank()) return null;
-        // ISO-8601 (예: 2025-10-14T09:00) 또는 yyyy-MM-dd HH:mm 둘 다 지원
-        try {
-            return LocalDateTime.parse(text);
-        } catch (DateTimeParseException ignored) {}
-        try {
-            return LocalDateTime.parse(text, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-        } catch (DateTimeParseException ignored) {}
-        return null;
     }
 }
 

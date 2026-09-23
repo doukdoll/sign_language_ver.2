@@ -18,18 +18,8 @@ public interface TrainScheduleRepository extends JpaRepository<TrainSchedule, Lo
             LocalDateTime nextDayMidnight
     );
 
-    // 출발역, 도착역 기준으로 출발 시간 이후 정렬된 열차 시간표 조회 (departureTime이 null일 경우 전체 조회)
-    List<TrainSchedule> findByDepartureStationAndArrivalStationAndDepartureTimeLessThanOrderByDepartureTimeAsc(
-            String departureStation,
-            String arrivalStation,
-            LocalDateTime nextDayMidnight
-    );
-
     // 모든 열차 시간표를 출발 시간 이후 정렬하여 조회
     List<TrainSchedule> findByDepartureTimeGreaterThanEqualAndDepartureTimeLessThanOrderByDepartureTimeAsc(LocalDateTime departureTime, LocalDateTime nextDayMidnight);
-
-    // 모든 열차 시간표를 출발 시간 기준 정렬하여 조회
-    List<TrainSchedule> findAllByOrderByDepartureTimeAsc();
 
     // 출발역과 출발 시간 이후 기준으로 정렬된 열차 시간표 조회
     List<TrainSchedule> findByDepartureStationAndDepartureTimeGreaterThanEqualAndDepartureTimeLessThanOrderByDepartureTimeAsc(
@@ -45,9 +35,11 @@ public interface TrainScheduleRepository extends JpaRepository<TrainSchedule, Lo
             LocalDateTime nextDayMidnight
     );
 
-    // 열차 번호, 출발 시간, 도착 시간을 기준으로 열차 시간표 조회
-    Optional<TrainSchedule> findByTrainNumberAndDepartureTimeAndArrivalTime(
+    // 열차 번호, 실제 출발/도착역과 시간을 모두 확인한다.
+    Optional<TrainSchedule> findByTrainNumberAndDepartureStationAndArrivalStationAndDepartureTimeAndArrivalTime(
             String trainNumber,
+            String departureStation,
+            String arrivalStation,
             LocalDateTime departureTime,
             LocalDateTime arrivalTime
     );

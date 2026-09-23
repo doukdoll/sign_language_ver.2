@@ -14,13 +14,13 @@
 
 | 체크 이름 | 환경 | 검사 |
 | --- | --- | --- |
-| `Frontend` | Ubuntu 24.04, Node.js 24 | `npm ci`, lint(경고도 실패), 세션 테스트, TypeScript 검사·Vite 빌드 |
+| `Frontend` | Ubuntu 24.04, Node.js 24 | `npm ci`, lint(경고도 실패), 세션·카메라 생명주기·예약 테스트, TypeScript 검사·Vite 빌드 |
 | `Backend` | Ubuntu 24.04, Temurin Java 17, Gradle 8.14.4 | `clean build`로 전체 테스트 및 JAR 생성 |
-| `AI session tests` | Ubuntu 24.04, Python 3.10 | `tests.test_sessions`만 실행, 외부 패키지 없이 세션 규약 검사 |
+| `AI session tests` | Ubuntu 24.04, Python 3.10 | 표준 라이브러리 세션 검사와 Flask HTTP 경계 검사, 실제 모델 없이 실행 |
 
-백엔드 WebSocket 테스트는 임의 로컬 포트의 모의 AI 서버를 사용하고 HTTP 테스트는 요청/응답을 모의 처리합니다. 별도 MySQL, Python 서버, API 키는 필요하지 않습니다.
+백엔드 WebSocket 테스트는 임의 로컬 포트의 모의 AI 서버를 사용하고 HTTP 테스트는 요청/응답을 모의 처리합니다. 예매 조회는 H2 저장소 테스트도 수행합니다. 별도 MySQL, Python 서버, API 키는 필요하지 않습니다.
 
-AI 검사는 `python -S`로 site-packages 로딩을 제외합니다. `server/requirements.txt` 설치, 실제 모델 추론, 학습, 정확도 측정은 수행하지 않습니다. 카메라·MediaPipe·ONNX 전체 연결 검증은 [실시간 검증 절차](LIVE_RECOGNITION_CHECK.md)로 별도 수행합니다.
+AI 세션 검사는 `python -S`로 site-packages 로딩을 제외합니다. 별도 HTTP 검사는 `server/requirements-test.txt`의 Flask와 그 의존성만 설치하고 테스트 클라이언트에 전처리·추론 함수를 주입합니다. 체크 이름은 기존 `AI session tests`를 유지합니다. 전체 `requirements.txt` 설치, 실제 모델 추론, 학습, 정확도 측정은 수행하지 않습니다. 카메라·MediaPipe·ONNX 전체 연결 검증은 [실시간 검증 절차](LIVE_RECOGNITION_CHECK.md)로 별도 수행합니다.
 
 현재 저장소에 `gradle-wrapper.jar`가 없어 CI는 Gradle 8.14.4를 설치한 후 `gradle` 명령을 사용합니다. Gradle 버전 변경 시 `backend/gradle/wrapper/gradle-wrapper.properties`와 워크플로의 `gradle-version`을 함께 갱신해야 합니다.
 
@@ -46,6 +46,8 @@ gradle --no-daemon --console=plain clean build
 ```bash
 cd server
 python -S -m unittest tests.test_sessions -v
+python -m pip install -r requirements-test.txt
+python -m unittest tests.test_http_api -v
 ```
 
 `npm run build`에 타입 검사가 포함되어 있습니다. 현재 Vite의 번들 크기 경고는 빌드를 실패시키지 않습니다. 이 CI는 별도 보안 취약점 스캔을 포함하지 않습니다.
@@ -59,7 +61,7 @@ python -S -m unittest tests.test_sessions -v
 
 공식 설정 참고: [setup-node](https://github.com/actions/setup-node), [setup-gradle](https://github.com/gradle/actions/blob/main/docs/setup-gradle.md), [setup-python](https://github.com/actions/setup-python).
 
-## 구성 검증 기록 (2026-09-22)
+## 초기 CI 구성 검증 기록 (2026-09-22, PR #18)
 
 - `actionlint 1.7.12`: 워크플로 문법·표현식 검사 통과.
 - Windows 로컬에서 Node.js 24로 `npm ci` 후 lint(오류·경고 0개), 세션 테스트 8개, 타입 검사 및 프로덕션 빌드 통과. 기존 번들 크기·브라우저 호환성 데이터 갱신 경고는 남아 있습니다.
@@ -73,3 +75,19 @@ GitHub-hosted Ubuntu runner에서도 다음 실행을 확인했습니다. 두 �
 - [develop 병합 후 CI](https://github.com/doukdoll/sign_language_ver.2/actions/runs/35732788235): squash 커밋 `439741d`, `push` 이벤트.
 
 로컬 검사·GitHub CI·실제 모델/카메라 검증은 서로 다른 범위입니다. 위 성공 기록은 이후 모든 커밋의 통과를 보장하지 않으며, 새 PR의 Checks를 다시 확인해야 합니다.
+
+## 코드 정리 검증 기록 (2026-09-22)
+
+`de-refactor/code-quality-cleanup`에서 다음 로컬 검증을 통과했습니다.
+
+- FE: 최종 잠금 파일로 `npm ci`, lint 오류·경고 0개, 타입 검사·프로덕션 빌드, 테스트 34개(세션 8 / 모의 카메라 11 / 예약·조회 15).
+- BE: `clean build`, 테스트 26개. 별도 `clean test bootJar` 실행에서는 Dockerfile과 같은 단일 실행 JAR 생성도 확인했습니다.
+- AI: 표준 라이브러리 세션 테스트 15개와 Flask HTTP 테스트 15개, 합계 30개. HTTP 테스트는 모델·NumPy·카메라 모듈 없이 실행합니다.
+- `actionlint 1.7.12`와 Markdown 상대 링크·JSON 예제 검사 통과.
+- 실제 BE·Python·ONNX 합성 입력 연결 재검증 통과([상세 범위](LIVE_RECOGNITION_CHECK.md)).
+
+위 내용은 2026-09-22 PR 생성 전의 로컬 검증 기록입니다. 이후 2026-09-23 [PR #20](https://github.com/doukdoll/sign_language_ver.2/pull/20)을 `develop` 대상으로 생성했습니다. 해당 PR의 Checks에서 최종 커밋의 `Frontend`, `Backend`, `AI session tests` 결과를 확인합니다. 작업 브랜치 push만으로는 워크플로가 실행되지 않으며, PR 생성 이후에는 추가 커밋도 검사합니다.
+
+- [PR #20 최초 CI](https://github.com/doukdoll/sign_language_ver.2/actions/runs/35800861860): 코드 정리 커밋 `9ac2634`에서 세 작업 모두 성공했습니다. 이후 문서 보완 커밋도 병합 전에 다시 검사합니다.
+
+기존 번들 크기·브라우저 호환성 데이터 경고와 Gradle 9 비호환 기능 경고는 남아 있습니다. 실제 카메라·왕복 UI·Docker 실행·보안 검사는 이번 자동 검증 범위가 아닙니다.

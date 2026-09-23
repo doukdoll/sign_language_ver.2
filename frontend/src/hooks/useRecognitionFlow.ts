@@ -29,6 +29,7 @@ export function useRecognitionFlow(options: RecognitionFlowOptions) {
     label: null, probability: null,
   });
   const [processingError, setProcessingError] = useState<string | null>(null);
+  const [cameraAttempt, setCameraAttempt] = useState(0);
   const { sendKeypoints, state: streamingState, resetSession } = useKeypointStreaming({
     enabled: isRecognizing, serverUrl, targetFps, recognitionTarget,
     onRecognized: (label, probability) => {
@@ -48,8 +49,8 @@ export function useRecognitionFlow(options: RecognitionFlowOptions) {
     }
   }, [isRecognizing, enableHandFilter, sendKeypoints]);
 
-  const { isReady: holisticReady, error: holisticError } = useHolistic(videoRef.current, {
-    onResults: handleHolisticResults, enabled: isRecognizing,
+  const { isReady: holisticReady, error: holisticError } = useHolistic(videoRef, {
+    onResults: handleHolisticResults, enabled: isRecognizing, restartKey: cameraAttempt,
   });
   const state: RecognitionFlowState = {
     isRecognizing,
@@ -69,7 +70,8 @@ export function useRecognitionFlow(options: RecognitionFlowOptions) {
     setResult({ label: null, probability: null });
     setProcessingError(null);
     resetSession();
-  }, [resetSession]);
+    if (holisticError) setCameraAttempt(attempt => attempt + 1);
+  }, [resetSession, holisticError]);
 
   return { videoRef, state, startRecognition, stopRecognition, resetResult };
 }

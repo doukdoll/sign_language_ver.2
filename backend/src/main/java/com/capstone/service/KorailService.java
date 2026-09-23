@@ -96,7 +96,7 @@ public class KorailService {
                         .duration((int) java.time.Duration.between(schedule.getDepartureTime(), schedule.getArrivalTime()).toMinutes())
                         .seatType("STANDARD") // CSV에 없으므로 임시로 설정
                         .availableSeats(50) // CSV에 없으므로 임시로 설정
-                        .price(50000) // CSV에 없으므로 임시로 설정
+                        .price(schedule.getPrice())
                         .status("available") // CSV에 없으므로 임시로 설정
                         .build())
                 .sorted(Comparator.comparing(TrainInfoDto::getDepartureTime))

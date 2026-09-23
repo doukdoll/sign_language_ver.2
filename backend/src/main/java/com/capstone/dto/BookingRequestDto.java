@@ -42,6 +42,7 @@ public class BookingRequestDto {
     @NotBlank(message = "Payment method is required")
     private String paymentMethod;
     
+    @NotBlank(message = "Trip type is required")
     private String tripType; // "one_way" or "round_trip"
 }
 

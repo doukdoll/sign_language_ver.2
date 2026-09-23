@@ -6,24 +6,13 @@
 
 공통 Axios 인스턴스는 `frontend/src/api/axios.ts`에 있으며 `baseURL`은 `http://localhost:8080/api`로 고정되어 있습니다. 아래 경로는 이 주소에 이어 붙입니다.
 
-### 선택값 전달
+### 수동 선택값 전달
 
-| 화면 | 요청 | `signLanguageData` 예시 | `recognitionTarget` |
-| --- | --- | --- | --- |
-| `PassengerPage.tsx` | `POST /signlanguage/passengers` | `"2"` | `passengers` |
-| `TripTypePage.tsx` | `POST /signlanguage/triptype` | `"one-way"` 또는 `"round"` | `triptype` |
-| `DateTimePage.tsx` | `POST /signlanguage/datetime` | `"2026-09-22 09:00"` | `datetime` |
+`PassengerPage.tsx`, `TripTypePage.tsx`, `DateTimePage.tsx`에서 선택한 값은 React Router의 `location.state`로 다음 화면에 전달합니다. 이 단계에는 HTTP 요청이 없습니다. 이전에 호출하던 `/signlanguage/passengers`, `/signlanguage/triptype`, `/signlanguage/datetime`은 고정 응답만 반환하고 선택값을 저장하지 않아 FE 호출을 제거했습니다. BE의 기존 REST 경로는 유지합니다.
 
-요청 형식:
+`src/utils/reservation.ts`는 역·승객 수·여정 종류·일시·열차·좌석 필드를 검증합니다. 필수 정보가 없는 예약 단계는 시작 화면으로 돌아갑니다. 왕복 선택 중에는 `seats1`과 `selectedTrain1`을 유지한 채 오는 편의 `seats2`와 `selectedTrain2`를 추가합니다. 요약 화면은 두 편을 표시하고 두 운임 합계에 승객 수를 곱합니다. 미완성 왕복 상태를 편도 금액으로 결제하지 않습니다.
 
-```json
-{
-  "signLanguageData": "2",
-  "recognitionTarget": "passengers"
-}
-```
-
-왕복 날짜는 `2026-09-22 09:00 | 2026-09-24 18:00`처럼 전달합니다. 세 API는 현재 **고정 응답**을 반환하며 선택값을 저장하거나 AI로 해석하지 않습니다. FE는 응답을 로그로 확인하고, 사용자가 고른 값을 React Router의 `location.state`로 다음 화면에 전달합니다. 고정 응답으로 사용자 선택을 덮어쓰지 않습니다.
+열차 경로 검증은 백엔드의 검색어 공백 제거와 `대구 → 동대구/서대구` 검색 별칭을 허용합니다. 열차 선택 이후의 상태는 실제 열차 출발·도착역으로 갱신합니다. 왕복은 그 실제 구간을 뒤집어 조회하며 `동대구`를 명시한 검색에서 `서대구` 열차를 임의로 허용하지 않습니다.
 
 ### 기차 시간표 조회
 
@@ -35,11 +24,13 @@
 | `destination` | `부산` |
 | `departureFrom` | `2026-09-22 09:00` (`yyyy-MM-dd HH:mm`, 초 없음) |
 
-조회 결과가 없거나 요청이 실패한 경우, 또는 코드가 필수 입력 누락으로 판정한 경우에는 현재 화면이 하드코딩된 mock 시간표를 표시합니다. 표시된 열차가 실제 API 조회 성공을 뜻하지 않습니다. 서버의 요금·좌석 잔여 수 자체도 프로토타입 값입니다.
+`src/utils/trainSchedules.ts`에서 응답 배열과 각 열차의 화면 사용 필드를 검증합니다. 빈 결과는 빈 목록 안내, 요청 실패·잘못된 응답은 오류와 재조회 버튼으로 표시합니다. 필수 입력 누락 시 시작 화면으로 돌아가며 mock 시간표를 대신 표시하지 않습니다. 운임이 `null`인 열차는 선택 완료가 차단됩니다.
 
-### 이전 REST 인식 훅과 미연결 API
+검색 시작 시 이전 결과와 선택을 초기화합니다. 요청에는 `AbortSignal`을 전달하며 화면 이탈·조건 변경 시 취소하고, 취소 후 도착한 성공·실패 응답은 무시합니다. 백엔드 CSV·요금·좌석 잔여 수는 여전히 프로토타입 데이터이며 실시간 철도 판매 시스템은 아닙니다.
 
-`useStationRecognition.ts`는 `POST /signlanguage/recognize`에 가짜 제스처와 `recognitionTarget: "city"`를 보내는 이전 테스트 훅입니다. 현재 출발역·도착역 페이지는 이 훅을 사용하지 않습니다. 서버가 `city`를 유효한 인식 대상으로 처리하지 않으므로 실제 인식 예제로 사용하지 않습니다.
+### 미연결 API
+
+가짜 제스처를 보내던 `useStationRecognition.ts`와 임의 인식 결과를 반환하던 `UseRecognition.ts`는 사용되지 않아 삭제했습니다. 현재 FE의 역 인식은 아래 WebSocket 경로만 사용하며 `/signlanguage/recognize`를 호출하지 않습니다.
 
 BE에는 `/booking/train` API가 있지만 현재 FE는 이를 호출하지 않습니다. 좌석 선택·결제·티켓 완료 화면은 실제 좌석 재고, 결제 승인, 예약 저장과 연결되지 않은 시뮬레이션입니다.
 
@@ -51,6 +42,9 @@ BE에는 `/booking/train` API가 있지만 현재 FE는 이를 호출하지 않�
 - 상태/메시지 검증: `frontend/src/utils/recognitionSession.ts`
 - 소켓·ACK 제한 시간·재접속: `frontend/src/hooks/useKeypointStreaming.ts`
 - MediaPipe와 인식 UI 연결: `frontend/src/hooks/useRecognitionFlow.ts`
+- 카메라 단일 소유·처리 루프: `frontend/src/hooks/useHolistic.ts`, `frontend/src/utils/cameraPipeline.ts`
+
+`CameraFeed`는 `<video>` 표시만 담당합니다. `useHolistic`이 브라우저 `getUserMedia` 스트림과 MediaPipe 인스턴스를 소유하며 프레임을 순차 처리합니다. 기존 Camera Utils의 별도 스트림 요청은 제거했고, 사용하지 않던 React Webcam 의존성도 삭제했습니다.
 
 ### 세션 시작
 
@@ -113,13 +107,16 @@ const frame = {
 ### 재시도·오류·종료
 
 - 재시도는 결과를 지우고 `RESET_SESSION`을 revision + 1로 전송합니다. `SESSION_RESET` 이후 frameIndex 0부터 재개합니다.
+- 카메라 오류가 있으면 재시도 시 카메라·MediaPipe 초기화도 다시 수행합니다. 카메라 재시작과 서버 세션의 revision 처리는 별개입니다.
 - START/RESET ACK 제한 시간은 10초입니다. 실패·연결 종료 시 오류를 표시하고 1초부터 최대 10초 간격으로 재접속합니다.
 - 재접속은 새 서버 발급 ID와 revision 0으로 시작하며 이전 버퍼를 복원하지 않습니다.
 - 화면을 떠나거나 인식을 중지하면 `END_SESSION`을 최선 노력으로 전송하고 소켓을 닫습니다.
-- 카메라 컴포넌트가 사라지면 자신이 연 스트림의 트랙을 종료합니다. 권한 응답이 늦게 도착한 경우도 종료 처리합니다.
+- 인식을 중지하거나 화면을 떠나면 소유한 카메라 트랙과 프레임 루프를 종료합니다. 권한 응답이 늦게 도착한 경우에도 트랙을 종료하고, 초기화·프레임 처리 중 이탈한 경우에는 해당 처리가 끝난 뒤 MediaPipe를 닫으며 늦은 결과를 전달하지 않습니다.
 
 ## 3. 검증 범위
 
-[CI](.github/workflows/ci.yml)는 `develop` 대상 PR과 push에서 FE 전체 lint(경고 0), 세션 회귀 테스트 8개, 타입 검사와 프로덕션 빌드를 수행합니다. 이 테스트는 순수 세션 상태 로직을 검증하며 React 화면·카메라·실제 결제를 자동 검증하지 않습니다.
+[CI](.github/workflows/ci.yml)는 `develop` 대상 PR과 push에서 FE 전체 lint(경고 0), `npm test`, 타입 검사와 프로덕션 빌드를 수행합니다. 과거 PR #18 및 당시 develop CI 통과는 세션 테스트 8개 기준 기록입니다.
+
+이번 코드 정리 후 로컬 lint·타입 검사·빌드와 테스트 34개(세션 규약 8개, 모의 카메라 생명주기 11개, 예약/조회 15개)가 통과했습니다. 원격 CI는 [PR #20](https://github.com/doukdoll/sign_language_ver.2/pull/20)의 최종 커밋 Checks를 확인합니다. 실제 브라우저 수동 재검증은 남아 있습니다. 테스트는 주입한 모의 카메라/스케줄러·순수 상태·비동기 요청을 검증하며 실제 장치·MediaPipe WASM·React 화면·결제를 자동 실행하지 않습니다.
 
 FE 세션 코드 → 실제 BE → Python → ONNX 스모크 명령 및 브라우저 확인 항목은 [실시간 연동 검증 문서](docs/LIVE_RECOGNITION_CHECK.md)를 참고하세요.

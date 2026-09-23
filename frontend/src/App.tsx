@@ -25,7 +25,6 @@ const router = createBrowserRouter([
   { path: "/summary", element: <ReservationSummaryPage/>},
   { path: "/payment", element: <PaymentPage/>},
   { path: "/paymentcomplete", element: <PaymentCompletePage/>},
-  { path: "/"}
 ]);
 
 function App() {
